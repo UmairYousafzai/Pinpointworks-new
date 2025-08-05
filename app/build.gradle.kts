@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.sleetworks.serenity.android"
+    namespace = "com.sleetworks.serenity.android.newone"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.sleetworks.serenity.android"
+        applicationId = "com.sleetworks.serenity.android.newone"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -61,6 +61,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -91,7 +92,7 @@ dependencies {
 
     //room
     implementation(libs.androidx.room.runtime)
-    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
     // Retrofit
@@ -108,6 +109,12 @@ dependencies {
 
     //core splashscreen
     implementation(libs.androidx.core.splashscreen)
+
+    //datastore
+    implementation(libs.androidx.datastore.preferences)
+
+    //lottie
+    implementation(libs.lottie.compose)
 
 
 }
