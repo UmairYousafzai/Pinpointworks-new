@@ -7,7 +7,6 @@ import java.io.Serializable
  {
 
      @SerializedName("_rev")
-     var revision: String?=""
      var header: Header? = null
      var tags: ArrayList<String>? = arrayListOf()
  }

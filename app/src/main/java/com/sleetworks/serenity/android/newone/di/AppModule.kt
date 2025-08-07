@@ -4,7 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.MainDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointDatabase
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
 import com.sleetworks.serenity.android.newone.utils.CONSTANTS.DB_NAME
 import dagger.Module
 import dagger.Provides
@@ -25,6 +30,21 @@ object AppModule {
 
     @Provides
     fun provideUserDao(db: PinpointDatabase): UserDao = db.userDao()
+
+    @Provides
+    fun provideWorkspaceDao(db: PinpointDatabase): WorkspaceDao = db.workspaceDao()
+
+    @Provides
+    fun provideSiteDao(db: PinpointDatabase): SiteDao = db.siteDao()
+
+    @Provides
+    fun provideCustomFieldDao(db: PinpointDatabase): CustomFieldDao = db.customFieldDao()
+
+    @Provides
+    fun provideSublistDao(db: PinpointDatabase): SubListDao = db.sublistDao()
+
+    @Provides
+    fun provideShareDao(db: PinpointDatabase): ShareDao = db.shareDao()
 //
 //    @Provides
 //    fun provideMainDao(db: PinpointDatabase): MainDao = db.mainDaa()

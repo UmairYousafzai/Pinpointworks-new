@@ -4,8 +4,12 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiRes
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -44,9 +48,19 @@ interface ApiService {
     ): Response<ApiResponse<UserResponse>>
 
 
+    /////////// Sit //////////////
+
+    @GET("site")
+    suspend fun getAllSites(): Response<ApiResponse<List<Site>>>
+
+    /////////// Share //////////////
+    @GET("share")
+    suspend fun getAllShares(): Response<ApiResponse<List<Share>>>
+
     /////////// Workspace //////////////
     @GET("account/allworkspaces?showHidden=false")
-    fun getAllWorkspaces(): Response<ApiResponse<WorkspaceResponse>>
+    suspend fun getAllWorkspaces(): Response<ApiResponse<List<WorkspaceResponse>>>
+
 
 //    /////////// Defects //////////////
 //    @GET("points")

@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.models.remote.response.workspace
 
 import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
 data class Workspace(
     @SerializedName("_id")
@@ -13,4 +14,4 @@ data class Workspace(
     val sitePlan: SitePlan,
     val siteRef: SiteRef,
     val tags: List<Any>
-)
+): Serializable

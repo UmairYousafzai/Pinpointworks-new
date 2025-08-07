@@ -1,5 +1,6 @@
 package com.sleetworks.serenity.android.newone.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,11 +12,15 @@ import javax.inject.Inject
 @HiltViewModel
 class SharedViewModel @Inject constructor() : ViewModel() {
 
+    val TAG= "SharedViewModel"
     private val _snackbarChannel = Channel<String>()
     val snackbarFlow = _snackbarChannel.receiveAsFlow()
 
     fun showSnackbar(message: String) {
+
+
         viewModelScope.launch {
+            Log.d(TAG, "showSnackbar: ")
             _snackbarChannel.send(message)
         }
     }

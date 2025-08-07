@@ -1,5 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.models.remote.response.workspace
 
+import java.io.Serializable
+
 data class SitePlan(
     val extent: List<Double>,
     val maxZoom: Int,
@@ -9,4 +11,4 @@ data class SitePlan(
     val resolutions: List<Double>,
     val sitePlanURL: String,
     val version: Int
-)
+): Serializable

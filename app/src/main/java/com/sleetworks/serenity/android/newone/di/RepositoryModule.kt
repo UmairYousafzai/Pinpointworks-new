@@ -1,18 +1,31 @@
 package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
 import com.sleetworks.serenity.android.newone.data.network.RetrofitProvider
+import com.sleetworks.serenity.android.newone.data.repositories.local.CustomFieldRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.AuthRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.DataStoreRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.ShareRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.SiteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.UserRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.WorkspaceRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.FirebaseRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.WorkspaceRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.domain.reporitories.AuthRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.CustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.FirebaseRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.ShareRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -59,6 +72,33 @@ object RepositoryModule {
     @Singleton
     fun provideUserRepository(userDao: UserDao): UserRepository {
         return UserRepositoryImpl(userDao);
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkspaceRepository(workspaceDao: WorkspaceDao): WorkspaceRepository {
+        return WorkspaceRepositoryImpl(workspaceDao);
+    }
+
+    @Provides
+    @Singleton
+    fun provideSiteRepository(siteDao: SiteDao): SiteRepository {
+        return SiteRepositoryImpl(siteDao);
+    }
+
+    @Provides
+    @Singleton
+    fun provideCustomFieldRepository(
+        customFieldDao: CustomFieldDao,
+        subListDao: SubListDao
+    ): CustomFieldRepository {
+        return CustomFieldRepositoryImpl(customFieldDao, subListDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideShareRepository(shareDao: ShareDao): ShareRepository {
+        return ShareRepositoryImpl(shareDao)
     }
 
 }

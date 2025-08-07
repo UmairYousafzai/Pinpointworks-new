@@ -19,7 +19,6 @@ data class UserEntity(
     val notificationStatus: NotificationStatus,
     val activeWorkspaceRef: ActiveWorkspaceRef,
     val preferenceDocRef: PreferenceDocRef,
-    val revision: String,
     val header: Header?,
     val tags: ArrayList<String>,
     val email: String,

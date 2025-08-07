@@ -10,14 +10,19 @@ import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPr
 import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
 import com.sleetworks.serenity.android.newone.utils.PREF_AUTH_TOKEN
 import com.sleetworks.serenity.android.newone.utils.PREF_EMAIL
+import com.sleetworks.serenity.android.newone.utils.PREF_IS_LOGIN
 import com.sleetworks.serenity.android.newone.utils.PREF_PASSWORD
+import com.sleetworks.serenity.android.newone.utils.PREF_USER_ID
+import com.sleetworks.serenity.android.newone.utils.PREF_USER_NAME
 import com.sleetworks.serenity.android.newone.utils.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -27,17 +32,26 @@ class DataStoreRepositoryImpl @Inject constructor(val context: Context) : DataSt
     override val authTokenFlow: StateFlow<String?> = context.dataStore.data.map {
         it[PREF_AUTH_TOKEN]
     }.stateIn(
-            scope = externalScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
-        )
+        scope = externalScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ""
+    )
     override val emailFlow: StateFlow<String?> = context.dataStore.data.map {
         it[PREF_EMAIL]
     }.stateIn(
-            scope = externalScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
-        )
+        scope = externalScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ""
+    )
+
+    override val isLoggedInFlow: StateFlow<Boolean?> = context.dataStore.data.map {
+        it[PREF_IS_LOGIN] != null
+
+    }.stateIn(
+        scope = externalScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     override suspend fun putString(key: String, value: String) {
         val preferencesKey = stringPreferencesKey(key)
@@ -94,9 +108,12 @@ class DataStoreRepositoryImpl @Inject constructor(val context: Context) : DataSt
 
     override suspend fun saveUserInfo(user: UserPreference) {
         context.dataStore.edit { preferences ->
+            preferences[PREF_USER_ID] = user.email
+            preferences[PREF_USER_NAME] = user.email
             preferences[PREF_EMAIL] = user.email
             preferences[PREF_AUTH_TOKEN] = user.authToken
             preferences[PREF_PASSWORD] = user.password
+            preferences[PREF_IS_LOGIN] = user.password
 
         }
     }

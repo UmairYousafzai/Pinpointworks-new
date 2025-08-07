@@ -17,6 +17,8 @@ val Grey = Color(0xFF9E9E9E)
 val LightGrey = Color(0xFFAAAAAA)
 val Red = Color(0xFFff3d3d)
 val PaleGold = Color(0xFFFFCC66)
+val DarkCharcoal = Color(0xFF35383F)
+val BabyBlue = Color(0xFFC4EAF8)
 
 val BlackOpacity70 = Color(0xB3000000)
 val RedOpacity90 = Color(0x66F14848)

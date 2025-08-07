@@ -54,6 +54,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.sleetworks.serenity.android.newone.domain.models.APIsListItem
+import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.ui.components.APIsSelectionDialog
 import com.sleetworks.serenity.android.newone.presentation.ui.components.CustomLoader
 import com.sleetworks.serenity.android.newone.presentation.ui.components.ErrorBox
@@ -69,16 +70,15 @@ import com.sleetworks.serenity.android.newone.ui.theme.LightGrey
 import com.sleetworks.serenity.android.newone.ui.theme.PaleGold
 import com.sleetworks.serenity.android.newone.ui.theme.Red
 
-val TAG: String = "LoginScreen"
 
 @Composable
 fun LoginScreen(
-    navController: NavController? = null,
+    navController: NavController,
     authViewModel: AuthViewModel = hiltViewModel(),
-    sharedViewModel: SharedViewModel = hiltViewModel()
+    sharedViewModel: SharedViewModel
 ) {
 
-
+    val TAG: String = "LoginScreen"
     val loader by authViewModel.loader.collectAsState()
     val error by authViewModel.error.collectAsState()
     val message by authViewModel.message.collectAsState()
@@ -90,6 +90,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var showAPIsDialog by remember { mutableStateOf(false) }
     var showOTPDialog by remember { mutableStateOf(false) }
+    val uiEvent = authViewModel.uiEvent
 
     val textFieldColor = TextFieldDefaults.colors(
         focusedPlaceholderColor = LightGrey,
@@ -112,10 +113,15 @@ fun LoginScreen(
         }
     }
 
-    if (loginSuccess) {
+    LaunchedEffect(Unit) {
+        uiEvent.collect { event ->
+            when (event) {
+                is UIEvent.Navigate -> navController.navigate(event.route)
+                is UIEvent.PopBackStack -> navController.popBackStack()
 
+            }
+        }
     }
-
 
     Box(
         modifier = Modifier
@@ -292,6 +298,6 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     PinpointworksNewTheme {
-        LoginScreen()
+//        LoginScreen()
     }
 }

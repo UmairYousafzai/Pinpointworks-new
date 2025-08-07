@@ -8,7 +8,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.A
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.PreferenceDocRef
 
-class Converters {
+class UserConverters {
     private val gson = Gson()
 
     @TypeConverter

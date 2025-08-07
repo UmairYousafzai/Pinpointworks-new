@@ -1,5 +1,6 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.screens.auth
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,12 +33,32 @@ import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.ui.components.LoaderButton
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
+import com.sleetworks.serenity.android.newone.presentation.viewmodels.SyncViewModel
 import com.sleetworks.serenity.android.newone.ui.theme.PaleGold
 import com.sleetworks.serenity.android.newone.ui.theme.PinpointworksNewTheme
 
 
 @Composable
-fun SyncScreen(navController: NavController?= null, ){
+fun SyncScreen(
+    navController: NavController,
+    syncViewModel: SyncViewModel = hiltViewModel(),
+    sharedViewModel: SharedViewModel = hiltViewModel()
+) {
+    val TAG: String = "SyncScreen"
+
+    val message by syncViewModel.message.collectAsState()
+    val error by syncViewModel.error.collectAsState()
+    val success by syncViewModel.success.collectAsState()
+
+
+    LaunchedEffect(error) {
+        
+        if (error.isNotEmpty()){
+            Log.d(TAG, "SyncScreen: show snackbar ")
+            sharedViewModel.showSnackbar(error)
+        }
+    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -45,7 +69,12 @@ fun SyncScreen(navController: NavController?= null, ){
             modifier = Modifier.matchParentSize()
         )
 
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Image(
                 modifier = Modifier
                     .padding(top = 70.dp)
@@ -57,7 +86,8 @@ fun SyncScreen(navController: NavController?= null, ){
 
             Spacer(modifier = Modifier.height(70.dp))
 
-            Text(text = "You've successfully \nlogged in",
+            Text(
+                text = "You've successfully \nlogged in",
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 style = TextStyle(
@@ -67,7 +97,8 @@ fun SyncScreen(navController: NavController?= null, ){
             )
             Spacer(modifier = Modifier.height(150.dp))
 
-            Text(text = "Some data will now be \ndownloaded for offline use.",
+            Text(
+                text = "Some data will now be \ndownloaded for offline use.",
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 style = TextStyle(
@@ -78,7 +109,8 @@ fun SyncScreen(navController: NavController?= null, ){
             )
             Spacer(modifier = Modifier.height(15.dp))
 
-            Text(text = "Some data will now be \ndownloaded for offline use.",
+            Text(
+                text = message,
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 style = TextStyle(
@@ -99,8 +131,9 @@ fun SyncScreen(navController: NavController?= null, ){
                 fontSize = 18.sp,
                 cornerRadius = 30f,
                 onClick = {
+                    syncViewModel.syncData()
                 },
-                shouldShowLoader = false
+                shouldShowLoader = !success
             )
 
 
@@ -113,6 +146,6 @@ fun SyncScreen(navController: NavController?= null, ){
 @Composable
 fun SyncScreenPreview() {
     PinpointworksNewTheme {
-        SyncScreen()
+//        SyncScreen()
     }
 }

@@ -1,11 +1,13 @@
 package com.sleetworks.serenity.android.newone.domain.reporitories
 
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface DataStoreRepository {
     val authTokenFlow: StateFlow<String?>
     val emailFlow: StateFlow<String?>
+    val isLoggedInFlow: StateFlow<Boolean?>
     suspend fun putString(key: String, value: String)
     suspend fun putLong(key: String, value: Long)
     suspend fun putInt(key: String, value: Int)

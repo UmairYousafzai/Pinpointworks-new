@@ -10,6 +10,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DataStoreViewModel @Inject constructor(private val repository: DataStoreRepository) : ViewModel() {
 
+    val isLoggedIn = repository.isLoggedInFlow
+
 
     fun put(key: String, value: String) {
         viewModelScope.launch {
@@ -36,6 +38,8 @@ class DataStoreViewModel @Inject constructor(private val repository: DataStoreRe
             repository.putBoolean(key, value)
         }
     }
+
+
 
 
 
