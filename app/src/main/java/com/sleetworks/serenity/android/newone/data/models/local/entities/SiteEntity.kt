@@ -7,7 +7,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SiteImageRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SitePlan
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SitePreferenceRef
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.WorkspaceRef
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 
 @Entity(tableName = "site")
 data class SiteEntity(

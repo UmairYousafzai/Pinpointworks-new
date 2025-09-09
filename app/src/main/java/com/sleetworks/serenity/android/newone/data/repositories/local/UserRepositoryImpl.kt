@@ -2,7 +2,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
-import com.sleetworks.serenity.android.newone.domain.reporitories.UserRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor (val userDao: UserDao) : UserRepository {

@@ -26,7 +26,8 @@ import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedView
 import com.sleetworks.serenity.android.newone.ui.theme.PinpointworksNewTheme
 import dagger.hilt.android.AndroidEntryPoint
 
-const val TAG="MainActivity"
+const val TAG = "MainActivity"
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -36,7 +37,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
 
-           dataStoreViewModel.isLoggedIn.value!=null
+            dataStoreViewModel.isLoggedIn.value != null
+            dataStoreViewModel.isFirstSync.value != null
         }
 
         super.onCreate(savedInstanceState)
@@ -46,8 +48,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             PinpointworksNewTheme {
                 val isLoggedIn = dataStoreViewModel.isLoggedIn.collectAsState()
-                if (isLoggedIn.value != null) {
-                    PinpointApp(sharedViewModel,isLoggedIn=isLoggedIn.value == true)
+                val isFirstSync = dataStoreViewModel.isLoggedIn.collectAsState()
+                if (isLoggedIn.value != null && isFirstSync.value != null) {
+                    // Capture the initial login state only once
+                    val initialLoginState = remember { isLoggedIn.value == true }
+                    val initialSyncState = remember { isFirstSync.value == true }
+                    PinpointApp(sharedViewModel,   initialLoginState,initialSyncState)
                 }
             }
         }
@@ -57,23 +63,26 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun PinpointApp(sharedViewModel: SharedViewModel , isLoggedIn: Boolean) {
-    Log.e(TAG, "PinpointApp: isLoggedIn $isLoggedIn", )
+fun PinpointApp(sharedViewModel: SharedViewModel, isLoggedIn: Boolean, initialSyncState: Boolean) {
+    Log.e(TAG, "PinpointApp: isLoggedIn $isLoggedIn")
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
 
+
+
     LaunchedEffect(Unit) {
         sharedViewModel.snackbarFlow.collect { message ->
-            Log.e(TAG, "PinpointApp: snackbar $message", )
+            Log.e(TAG, "PinpointApp: snackbar $message")
             snackbarHostState.showSnackbar(message)
         }
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            Navigation(navController,isLoggedIn,sharedViewModel)
+            Navigation(navController, isLoggedIn, initialSyncState, sharedViewModel)
         }
 
 

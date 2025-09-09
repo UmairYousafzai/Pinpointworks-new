@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
 
 data class Site(

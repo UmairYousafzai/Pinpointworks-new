@@ -5,9 +5,11 @@ import androidx.room.Room
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.MainDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointDatabase
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SyncDetailDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
 import com.sleetworks.serenity.android.newone.utils.CONSTANTS.DB_NAME
@@ -45,6 +47,12 @@ object AppModule {
 
     @Provides
     fun provideShareDao(db: PinpointDatabase): ShareDao = db.shareDao()
+
+    @Provides
+    fun providePointDao(db: PinpointDatabase): PointDao = db.pointDao()
+
+    @Provides
+    fun provideSynDetailDao(db: PinpointDatabase): SyncDetailDao = db.synDetailDao()
 //
 //    @Provides
 //    fun provideMainDao(db: PinpointDatabase): MainDao = db.mainDaa()

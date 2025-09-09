@@ -1,6 +1,6 @@
 package com.sleetworks.serenity.android.newone.data.network
 
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import com.sleetworks.serenity.android.newone.utils.BASE_URL
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -17,7 +17,7 @@ class RetrofitProvider @Inject constructor(
     private var cachedBaseUrl: String? = null
 
     suspend fun getRetrofit(): Retrofit {
-        val baseUrl = dataStore.getString(BASE_URL)+"api/v1/"
+        val baseUrl = dataStore.getString(BASE_URL)+"api/"
         if (retrofit == null || baseUrl != cachedBaseUrl) {
             cachedBaseUrl = baseUrl
             retrofit = Retrofit.Builder()

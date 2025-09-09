@@ -1,6 +1,6 @@
 package com.sleetworks.serenity.android.newone.data.network
 
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import com.sleetworks.serenity.android.newone.utils.AUTH_TOKEN
 import com.sleetworks.serenity.android.newone.utils.EMAIL
 import kotlinx.coroutines.runBlocking

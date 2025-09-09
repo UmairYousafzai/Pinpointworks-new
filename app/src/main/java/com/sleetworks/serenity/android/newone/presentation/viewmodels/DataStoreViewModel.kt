@@ -2,7 +2,7 @@ package com.sleetworks.serenity.android.newone.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -11,6 +11,7 @@ import javax.inject.Inject
 class DataStoreViewModel @Inject constructor(private val repository: DataStoreRepository) : ViewModel() {
 
     val isLoggedIn = repository.isLoggedInFlow
+    val isFirstSync = repository.isFirstSyncFlow
 
 
     fun put(key: String, value: String) {

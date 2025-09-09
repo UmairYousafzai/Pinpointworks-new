@@ -12,11 +12,11 @@ class UserConverters {
     private val gson = Gson()
 
     @TypeConverter
-    fun fromImageList(value: List<Image>?): String? = gson.toJson(value)
+    fun fromImageList(value: ArrayList<Image>?): String? = gson.toJson(value)
 
     @TypeConverter
-    fun toImageList(value: String?): List<Image>? =
-        value?.let { gson.fromJson(it, object : TypeToken<List<Image>>() {}.type) }
+    fun toImageList(value: String?): ArrayList<Image>? =
+        value?.let { gson.fromJson(it, object : TypeToken<ArrayList<Image>>() {}.type) }
 
     @TypeConverter
     fun fromStringList(value: ArrayList<String>?): String? = gson.toJson(value)

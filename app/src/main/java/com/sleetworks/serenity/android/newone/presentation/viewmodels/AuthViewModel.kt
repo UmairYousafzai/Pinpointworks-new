@@ -6,19 +6,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.BuildConfig
-import com.sleetworks.serenity.android.newone.data.mappers.toEntity
+import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
 import com.sleetworks.serenity.android.newone.data.models.remote.request.LoggedRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
-import com.sleetworks.serenity.android.newone.domain.reporitories.AuthRemoteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.UserRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
+import com.sleetworks.serenity.android.newone.utils.AUTH_TOKEN
 import com.sleetworks.serenity.android.newone.utils.BASE_URL
+import com.sleetworks.serenity.android.newone.utils.EMAIL
 import com.sleetworks.serenity.android.newone.utils.IS_LOGIN
 import com.sleetworks.serenity.android.newone.utils.USER_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,13 +33,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.io.BufferedInputStream
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRemoteRepository: AuthRemoteRepository,
     private val userRepository: UserRepository,
-    private val dataStoreRepository: DataStoreRepository
+    private val userRemoteRepository: UserRemoteRepository,
+    private val imageRemoteRepository: ImageRemoteRepository,
+    private val dataStoreRepository: DataStoreRepository,
+    private val userImageStore: UserImageStore
 ) : ViewModel() {
 
     private val TAG = "AuthViewModel"
@@ -96,10 +103,7 @@ class AuthViewModel @Inject constructor(
                 is Resource.Success -> {
                     result.data.entity?.let {
 
-                        storeUserData(UserPreference(
-                            authToken = it.authToken,
-                            email = it.user
-                        ))
+                        storeTokenAndEmail(it.user, it.authToken)
                         setupEnvironment(it, password)
                     }
                 }
@@ -158,10 +162,7 @@ class AuthViewModel @Inject constructor(
                             result.data.error?.let { _tfaNumber.emit(it) }
                         } else {
 
-                            storeUserData(UserPreference(
-                                authToken = response.authToken,
-                                email = response.user
-                            ))
+                            storeTokenAndEmail(response.user,response.authToken)
                             setupEnvironment(response, password)
 
                             Log.d(TAG, "login: store info")
@@ -211,7 +212,7 @@ class AuthViewModel @Inject constructor(
         _loader.emit(Pair("Fetching user", true))
 
         val result =
-            authRemoteRepository.getAuthUser(LoggedRequest(response.user, response.authToken))
+            userRemoteRepository.getAuthUser(LoggedRequest(response.user, response.authToken))
 
 
         when (result) {
@@ -221,18 +222,19 @@ class AuthViewModel @Inject constructor(
                     passwordHash = ""
                 }
                 result.data.entity?.user?.let {
-                    userRepository.insertUser(it.toEntity())
+//                    userRepository.insertUser(it.toEntity())
                     storeUserData(
                         UserPreference(
                             it.id,
                             it.name,
                             true,
-                            response.authToken,
                             it.email,
-                            password
+                            password,
+                            it.images[0].id
+
                         )
                     )
-
+                    downloadUserAvatar(it.images[0].id)
                     setupFirebase()
                     setupSentry()
 
@@ -319,8 +321,43 @@ class AuthViewModel @Inject constructor(
     suspend fun storeUserData(user: UserPreference) {
 
         dataStoreRepository.saveUserInfo(
-        user
+            user
         )
+
+    }
+
+    suspend fun storeTokenAndEmail(email: String, token: String) {
+
+        dataStoreRepository.putString(AUTH_TOKEN, token)
+        dataStoreRepository.putString(EMAIL, email)
+    }
+
+    suspend fun downloadUserAvatar(imageId: String) {
+        val result = imageRemoteRepository.downloadImageThumbFile(imageId)
+
+        when (result) {
+            is Resource.Success -> {
+                try {
+                    val outputStream = userImageStore.getAvatarOutputStream(imageId)
+                    val inputStream = BufferedInputStream(result.data.byteStream())
+                    var b: Int
+                    while ((inputStream.read().also { b = it }) != -1) {
+                        outputStream.write(b)
+                    }
+                    outputStream.flush()
+                } catch (e: Exception) {
+                    Log.e(TAG, "downloadUserAvatar: ", e)
+                }
+            }
+
+
+            is Resource.Error -> {
+                Log.e(TAG, "downloadUserAvatar: ", result.apiException)
+            }
+
+            Resource.Loading -> {}
+        }
+
 
     }
 

@@ -3,19 +3,17 @@ package com.sleetworks.serenity.android.newone.presentation.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
-import com.sleetworks.serenity.android.newone.domain.reporitories.CustomFieldRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.ShareRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.SiteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRemoteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
+import com.sleetworks.serenity.android.newone.utils.FIRST_SYNC
+import com.sleetworks.serenity.android.newone.utils.SITE_ID
 import com.sleetworks.serenity.android.newone.utils.WORKSPACE_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -28,18 +26,21 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SyncViewModel @Inject constructor(
-    val workspaceRemoteRepository: WorkspaceRemoteRepository,
-    val workspaceRepository: WorkspaceRepository,
-    val siteRepository: SiteRepository,
-    val customFieldRepository: CustomFieldRepository,
-    val shareRepository: ShareRepository,
+class FirstSyncViewModel @Inject constructor(
+        val workspaceRemoteRepository: WorkspaceRemoteRepository,
+        val workspaceRepository: WorkspaceRepository,
+        val siteRepository: SiteRepository,
+        val customFieldRepository: CustomFieldRepository,
+        val shareRepository: ShareRepository,
     val dataStoreRepository: DataStoreRepository
 ) : ViewModel() {
 
     private val TAG: String = "SyncViewModel"
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
+    private val _loader: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val loader: StateFlow<Boolean>
+        get() = _loader
     private val _error: MutableStateFlow<String> = MutableStateFlow("")
     val error: StateFlow<String>
         get() = _error
@@ -49,28 +50,37 @@ class SyncViewModel @Inject constructor(
     private val _success: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val success: StateFlow<Boolean>
         get() = _success
-    val syncList = arrayListOf(
-        "workspaces" to suspend { workspaceRemoteRepository.getAllWorkspaces() },
-        "sites" to suspend { workspaceRemoteRepository.getAllSites() },
-        "share" to suspend { workspaceRemoteRepository.getAllShares() })
 
-    init {
-        Log.e(TAG, ": syncData")
-        syncData()
+
+    private suspend fun setErrorToEmpty() {
+        _error.emit("")
+
+
     }
 
-    fun syncData() {
+    fun navigateToPointListScreen() {
+        viewModelScope.launch {
+            _uiEvent.emit(UIEvent.Navigate("defect_list"))
+        }
+    }
+
+
+    fun syncWorkspacesData() {
 
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                _loader.emit(true)
+                setErrorToEmpty()
                 var workspaceID = ""
                 _message.emit("Syncing data...")
-                Log.e(TAG, "syncData: start")
+                Log.d(TAG, "syncData: start")
 
-                val sitesDeferred = async {
-                    workspaceRemoteRepository.getAllSites()
-                }
+                val sitesDeferred =
+                    async {
+                        workspaceRemoteRepository.getAllSites()
+                    }
+
 
                 val workspacesDeferred = async {
                     workspaceRemoteRepository.getAllWorkspaces()
@@ -88,9 +98,9 @@ class SyncViewModel @Inject constructor(
                 val shares = sharesDeferred.await()
 
 
-                if (sites is Resource.Success<ApiResponse<List<Site>>> &&
-                    workspaces is Resource.Success<ApiResponse<List<WorkspaceResponse>>> &&
-                    shares is Resource.Success<ApiResponse<List<Share>>>
+                if (sites is Resource.Success &&
+                    workspaces is Resource.Success &&
+                    shares is Resource.Success
                 ) {
                     _message.emit("Storing workspaces...")
                     workspaces.data.entity?.let {
@@ -98,7 +108,11 @@ class SyncViewModel @Inject constructor(
                             workspaceRepository.insertWorkspaces(workspaceResponse.workspaces)
                         }
                         workspaceID = it.first().workspaces.first().id
-                        storeWorkspaceID(workspaceID)
+                        storeWorkspaceIDAndSiteID(
+                            workspaceID,
+                            it.first().workspaces.first().siteRef.id
+                        )
+
                     }
 
                     if (workspaceID.isEmpty()) {
@@ -110,7 +124,10 @@ class SyncViewModel @Inject constructor(
 
 
                     _message.emit("Storing sites...")
-                    sites.data.entity?.let { siteRepository.insertSites(it) }
+                    sites.data.entity?.let {
+                        siteRepository.insertSites(it)
+
+                    }
 
                     _message.emit("Storing custom fields...")
                     sites.data.entity?.let {
@@ -124,10 +141,9 @@ class SyncViewModel @Inject constructor(
                         }
                     }
 
-
                     _message.emit("Storing shares...")
                     shares.data.entity?.let {
-                        shareRepository.insertShares(it,workspaceID)
+                        shareRepository.insertShares(it, workspaceID)
                     }
 
                     _message.emit("Sync complete")
@@ -156,20 +172,29 @@ class SyncViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 _message.emit("Sync Failed")
-                _error.emit("Unexpected error: ${e.localizedMessage}")
+                _error.emit("Sync Failed, please try again.")
                 _success.emit(false)
                 Log.e(TAG, "syncData: unexpected error", e)
             }
 
+            _loader.emit(false)
 
         }
     }
 
 
-    suspend fun storeWorkspaceID(workspaceID: String) {
+        suspend fun storeWorkspaceIDAndSiteID(workspaceID: String, siteID: String) {
 
-        if (workspaceID.isNotEmpty()) {
-            dataStoreRepository.putString(WORKSPACE_ID, workspaceID)
+            if (workspaceID.isNotEmpty()) {
+                dataStoreRepository.putString(WORKSPACE_ID, workspaceID)
+                dataStoreRepository.putString(SITE_ID, siteID)
+            }
+
+        }
+
+    fun saveFirstSync() {
+        viewModelScope.launch {
+            dataStoreRepository.putBoolean(FIRST_SYNC, true)
         }
 
     }

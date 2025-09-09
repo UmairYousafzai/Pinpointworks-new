@@ -1,13 +1,18 @@
 package com.sleetworks.serenity.android.newone.data.mappers
 
+import android.util.Log
+import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CustomFieldEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListItem
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
@@ -140,10 +145,6 @@ fun SubListItem.toEntity(
     workspaceId: String
 ): SubListItemEntity {
 
-    val subList = if (!this.subList.isNullOrEmpty()) this.subList.map {
-        it.toEntity(parentId, fieldParentId, workspaceId)
-    } else arrayListOf()
-
     return SubListItemEntity(
         id = this.id,
         label = this.label,
@@ -155,4 +156,41 @@ fun SubListItem.toEntity(
 
 
         )
+}
+
+fun Point.toEntity(): PointEntity {
+    Log.e("Point", "toEntity: ${Gson().toJson(this)}")
+
+    val customFieldEntitys = this.customFieldSimplyList.map {
+        it.toEntity(this.workspaceRef.id)
+    } as ArrayList<CustomFieldEntity>
+
+
+    return PointEntity(
+        id = this.id ?: "",
+        localID = this.id,
+        assignees = this.assignees ?: arrayListOf(),
+        customFieldSimplyList = customFieldEntitys,
+        description = this.description ?: "",
+        descriptionRich = this.descriptionRich ?: "",
+        documents = this.documents ?: arrayListOf(),
+        flagged = this.flagged,
+        header = this.header, // nullable, no problem
+        images = this.images ?: arrayListOf(),
+        images360 = this.images360 ?: arrayListOf(),
+        pins = this.pins ?: arrayListOf(),
+        polygons = this.polygons ?: arrayListOf(),
+        priority = this.priority ?: "",
+        sequenceNumber = this.sequenceNumber ?: 0,
+        status = this.status ?: "",
+        tags = this.tags ?: arrayListOf(),
+        title = this.title ?: "",
+        videos = this.videos ?: arrayListOf(),
+        workspaceRef = if (!this.workspaceRef.caption.isNullOrEmpty()) this.workspaceRef else WorkspaceRef(
+            "",
+            this.workspaceRef.id
+        ),
+        isModified = false,
+        edited = this.edited ?: true
+    )
 }

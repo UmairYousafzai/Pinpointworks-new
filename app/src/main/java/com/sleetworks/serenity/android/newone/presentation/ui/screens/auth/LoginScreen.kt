@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.sleetworks.serenity.android.newone.R
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -116,12 +117,20 @@ fun LoginScreen(
     LaunchedEffect(Unit) {
         uiEvent.collect { event ->
             when (event) {
-                is UIEvent.Navigate -> navController.navigate(event.route)
+                is UIEvent.Navigate -> {
+
+                    navController.navigate(event.route) {
+                        popUpTo("login") { inclusive = true }
+
+                    }
+                }
+
                 is UIEvent.PopBackStack -> navController.popBackStack()
 
             }
         }
     }
+
 
     Box(
         modifier = Modifier
@@ -287,6 +296,14 @@ fun LoginScreen(
                 showOTPDialog = false
             }
         }
+        if (loader.second) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }
+            )
+        }
+
 
 //        if (loader.second)
 //            CustomLoader(loader.first)

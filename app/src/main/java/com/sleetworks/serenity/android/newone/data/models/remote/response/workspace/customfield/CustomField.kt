@@ -26,4 +26,7 @@ data class CustomField(
     val modified: Boolean,
     val volyIntegrationActive: Boolean,
     val lockedTemplate: Boolean,
+    val customFieldTemplateId: String,
+    val value: String,
+    val idOfChosenElement: String,
     )

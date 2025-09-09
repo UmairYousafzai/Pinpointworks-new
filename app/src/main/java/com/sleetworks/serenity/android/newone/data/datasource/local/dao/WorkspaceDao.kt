@@ -4,22 +4,32 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WorkspaceDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertWorkspace(workspace: WorkspaceEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertWorkspaces(workspace: List<WorkspaceEntity>)
 
     @Query("SELECT * FROM workspace WHERE id = :workspaceID")
     suspend fun getWorkspaceById(workspaceID: String): WorkspaceEntity?
 
+    @Query("SELECT * FROM workspace WHERE id = :workspaceID")
+    fun getWorkspaceByIdFlow(workspaceID: String): Flow<WorkspaceEntity?>
+
+
     @Query("SELECT * FROM workspace")
     suspend fun getAllWorkspaces(): List<WorkspaceEntity>
+
+    @Query("SELECT * FROM workspace")
+    fun getAllWorkspacesFlow(): Flow<List<WorkspaceEntity>>
+
 }

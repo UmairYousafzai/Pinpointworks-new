@@ -4,9 +4,9 @@ import androidx.room.ColumnInfo
 
 data class SiteImageRef(
     @ColumnInfo(name = "site_image_caption")
-    val caption: String="",
+    val caption: String?,
     @ColumnInfo(name = "site_image_id")
-    val id: String="",
+    val id: String?,
     @ColumnInfo(name = "site_image_type")
-    val type: String=""
+    val type: String?
 )

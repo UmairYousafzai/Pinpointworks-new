@@ -3,8 +3,10 @@ package com.sleetworks.serenity.android.newone.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.LoginScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.SyncScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.defectList.DefectListScreen
@@ -14,11 +16,19 @@ import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedView
 fun Navigation(
     navController: NavHostController,
     isLoggedIn: Boolean,
+    isFirstSync: Boolean,
     sharedViewModel: SharedViewModel
 ) {
+    var startDestination = Screen.LoginScreen.route
+    if (isFirstSync) {
+        startDestination = Screen.DefectListScreen.route+"/"+false
+    } else if (isLoggedIn) {
+        startDestination = Screen.SyncScreen.route
+    }
     NavHost(
         navController,
-        startDestination = if (!isLoggedIn) Screen.LoginScreen.route else Screen.SyncScreen.route
+//        startDestination = Screen.DefectListScreen.route
+        startDestination = startDestination
     ) {
         composable(Screen.LoginScreen.route) {
             LoginScreen(navController, sharedViewModel = sharedViewModel)
@@ -28,8 +38,11 @@ fun Navigation(
         ) { backStackEntry ->
             SyncScreen(navController, sharedViewModel = sharedViewModel)
         }
-        composable(Screen.DefectListScreen.route) {
-            DefectListScreen()
+        composable(
+            Screen.DefectListScreen.route+"/{shouldSyncPoint}",
+            arguments = listOf(navArgument("shouldSyncPoint") { type = NavType.BoolType })
+        ) { backStackEntry ->
+            DefectListScreen(navController, sharedViewModel)
         }
 
 //        composable(

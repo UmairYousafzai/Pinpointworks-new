@@ -24,7 +24,7 @@ data class UserEntity(
     val email: String,
     val enabled: Boolean,
     val enabled2fa: Boolean,
-    val images: List<Image>,
+    val images: ArrayList<Image>,
     val lastActivityEpochMillis: Long,
     val name: String,
     val setup2faAfter: Long,

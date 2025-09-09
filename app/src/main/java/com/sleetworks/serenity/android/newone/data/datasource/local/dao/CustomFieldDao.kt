@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
@@ -14,10 +15,10 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 @Dao
 interface CustomFieldDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertCustomField(customField: CustomFieldEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertCustomFields(sites: List<CustomFieldEntity>)
 
     @Query("SELECT * FROM custom_field WHERE id = :customFieldID")

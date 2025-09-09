@@ -120,6 +120,13 @@ dependencies {
     //splash
     implementation(libs.androidx.core.splashscreen)
 
+    //worker
+    implementation(libs.androidx.work.runtime.ktx)
+
+    //coil
+    implementation(libs.coil.compose)
+
+
 
 }
 

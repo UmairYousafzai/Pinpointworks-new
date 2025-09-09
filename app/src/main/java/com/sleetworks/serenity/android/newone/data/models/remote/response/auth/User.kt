@@ -14,7 +14,7 @@ data class User(
     var email: String,
     var enabled: Boolean,
     var enabled2fa: Boolean,
-    var images: List<Image>,
+    var images: ArrayList<Image>,
     var lastActivityEpochMillis: Long,
     var name: String,
     var notificationStatus: NotificationStatus,

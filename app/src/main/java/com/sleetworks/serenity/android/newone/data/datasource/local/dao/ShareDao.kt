@@ -4,23 +4,31 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ShareDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertShare(share: ShareEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertShares(shares: List<ShareEntity>)
 
     @Query("SELECT * FROM share WHERE id = :shareID")
     suspend fun getShareById(shareID: String): ShareEntity?
+
+    @Query("SELECT * FROM share WHERE workspace_id = :workspaceID")
+    suspend fun getShareByWorkspaceId(workspaceID: String): ShareEntity?
+
+    @Query("SELECT * FROM share WHERE workspace_id = :workspaceID")
+    fun getShareByWorkspaceIdFlow(workspaceID: String): Flow<ShareEntity?>
 
     @Query("SELECT * FROM share")
     suspend fun getAllShares(): List<ShareEntity>

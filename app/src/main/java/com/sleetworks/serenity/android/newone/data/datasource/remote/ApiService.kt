@@ -4,10 +4,12 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiRes
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
@@ -22,7 +24,7 @@ interface ApiService {
 
     /////////// AUTH //////////////
     @FormUrlEncoded
-    @POST("auth/login")
+    @POST("v1/auth/login")
     suspend fun login(
         @Field("email") email: String,
         @Field("passwordHash") passwordHash: String
@@ -33,7 +35,7 @@ interface ApiService {
     suspend fun checkIfUserExists(@Path("userEmail") email: String): Response<Unit>
 
     @FormUrlEncoded
-    @POST("auth/login")
+    @POST("v1/auth/login")
     suspend fun loginWithCode(
         @Field("email") email: String,
         @Field("passwordHash") passwordHash: String,
@@ -41,7 +43,7 @@ interface ApiService {
     ): Response<ApiResponse<LoginResponse>>
 
 
-    @GET("auth/logged")
+    @GET("v1/auth/logged")
     suspend fun getLogged(
         @Query("token") token: String,
         @Query("email") email: String
@@ -50,24 +52,37 @@ interface ApiService {
 
     /////////// Sit //////////////
 
-    @GET("site")
+    @GET("v1/site")
     suspend fun getAllSites(): Response<ApiResponse<List<Site>>>
 
+    @GET("site/{siteId}")
+    suspend fun getSite(@Path("siteId") siteId: String): Response<ApiResponse<Site>>
+
     /////////// Share //////////////
-    @GET("share")
+    @GET("v1/share")
     suspend fun getAllShares(): Response<ApiResponse<List<Share>>>
 
     /////////// Workspace //////////////
-    @GET("account/allworkspaces?showHidden=false")
+    @GET("v1/account/allworkspaces?showHidden=false")
     suspend fun getAllWorkspaces(): Response<ApiResponse<List<WorkspaceResponse>>>
 
 
-//    /////////// Defects //////////////
-//    @GET("points")
-//    fun getDefects(
-//        @Query("lastSyncTime") lastSyncTime: String,
-//        @Query("workspaceId") spaceId: String
-//    ): Call<ApiResponse<PointResult>>
+    /////////// Defects //////////////
+    @GET("v2/points")
+    suspend fun getDefectByWorkspace(
+        @Query("lastSyncTime") lastSyncTime: String,
+        @Query("workspaceId") workspaceId: String
+    ): Response<ApiResponse<PointResponse>>
+
+
+    //////////// Images //////////////
+
+    @GET("v1/images/{imageId}/file/size/square/200")
+    suspend fun downloadImageThumbFile(@Path("imageId") imageId: String): Response<ResponseBody>
+
+    /////////// user //////////////
+    @GET("v1/users/self")
+    suspend fun getSelfAccount(): Response<ApiResponse<User>>
 //
 //    @POST("points")
 //    fun addDefects(
@@ -211,8 +226,7 @@ interface ApiService {
 //        @Part imageFile: MultipartBody.Part
 //    ): Call<ApiResponse<String>>
 //
-//    @GET("images/{imageId}/file/size/square/200")
-//    fun downloadImageThumbFile(@Path("imageId") imageId: String): Call<ResponseBody>
+
 //
 //    @GET("images/{imageId}/file/size/bounded/1200")
 //    fun downloadImageLargeSize(@Path("imageId") imageId: String): Call<ResponseBody>

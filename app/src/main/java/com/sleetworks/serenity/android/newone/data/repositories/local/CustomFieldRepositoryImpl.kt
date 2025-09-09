@@ -7,7 +7,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.CustomF
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListItem
-import com.sleetworks.serenity.android.newone.domain.reporitories.CustomFieldRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
 import javax.inject.Inject
 
 class CustomFieldRepositoryImpl @Inject constructor(

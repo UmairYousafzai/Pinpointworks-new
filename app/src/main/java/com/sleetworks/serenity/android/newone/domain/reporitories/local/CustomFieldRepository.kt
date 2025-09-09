@@ -1,4 +1,4 @@
-package com.sleetworks.serenity.android.newone.domain.reporitories
+package com.sleetworks.serenity.android.newone.domain.reporitories.local
 
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField

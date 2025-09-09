@@ -2,30 +2,42 @@ package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SyncDetailDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
 import com.sleetworks.serenity.android.newone.data.network.RetrofitProvider
 import com.sleetworks.serenity.android.newone.data.repositories.local.CustomFieldRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.AuthRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.DataStoreRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.PointRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.ShareRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.SiteRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.SyncDetailRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.UserRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.WorkspaceRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.FirebaseRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.remote.ImageRemoteRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.remote.PointRemoteRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.remote.UserRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.WorkspaceRemoteRepositoryImpl
-import com.sleetworks.serenity.android.newone.domain.reporitories.AuthRemoteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.CustomFieldRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.FirebaseRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.ShareRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.SiteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.UserRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRemoteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.FirebaseRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,6 +66,33 @@ object RepositoryModule {
         retrofitProvider: RetrofitProvider
     ): WorkspaceRemoteRepository {
         return WorkspaceRemoteRepositoryImpl(context, retrofitProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun providePointRemoteRepository(
+        @ApplicationContext context: Context,
+        retrofitProvider: RetrofitProvider
+    ): PointRemoteRepository {
+        return PointRemoteRepositoryImpl(context, retrofitProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRemoteRepository(
+        @ApplicationContext context: Context,
+        retrofitProvider: RetrofitProvider
+    ): UserRemoteRepository {
+        return UserRemoteRepositoryImpl(context, retrofitProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageRemoteRepository(
+        @ApplicationContext context: Context,
+        retrofitProvider: RetrofitProvider
+    ): ImageRemoteRepository {
+        return ImageRemoteRepositoryImpl(context, retrofitProvider)
     }
 
     @Provides
@@ -99,6 +138,18 @@ object RepositoryModule {
     @Singleton
     fun provideShareRepository(shareDao: ShareDao): ShareRepository {
         return ShareRepositoryImpl(shareDao)
+    }
+
+    @Provides
+    @Singleton
+    fun providePointRepository(pointDao: PointDao): PointRepository {
+        return PointRepositoryImpl(pointDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSyncDetailRepository(syncDetailDao: SyncDetailDao): SyncDetailRepository {
+        return SyncDetailRepositoryImpl(syncDetailDao)
     }
 
 }

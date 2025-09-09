@@ -9,7 +9,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.UserRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SiteImageRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SitePlan
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.WorkspaceRef
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 
 class ShareConverters {
     private val gson = Gson()

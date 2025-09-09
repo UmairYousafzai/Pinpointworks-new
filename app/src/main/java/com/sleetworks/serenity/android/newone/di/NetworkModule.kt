@@ -2,7 +2,7 @@ package com.sleetworks.serenity.android.newone.di
 
 import com.sleetworks.serenity.android.newone.data.network.AuthInterceptor
 import com.sleetworks.serenity.android.newone.data.network.RetrofitProvider
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

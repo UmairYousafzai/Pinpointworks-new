@@ -1,4 +1,4 @@
-package com.sleetworks.serenity.android.newone.domain.reporitories
+package com.sleetworks.serenity.android.newone.domain.reporitories.local
 
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 

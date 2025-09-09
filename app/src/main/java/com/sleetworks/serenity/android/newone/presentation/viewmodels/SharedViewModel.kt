@@ -3,18 +3,27 @@ package com.sleetworks.serenity.android.newone.presentation.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.utils.WORKSPACE_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SharedViewModel @Inject constructor() : ViewModel() {
+class SharedViewModel @Inject constructor(
+    val dataStoreRepository: DataStoreRepository
 
-    val TAG= "SharedViewModel"
+) : ViewModel() {
+
+    val TAG = "SharedViewModel"
     private val _snackbarChannel = Channel<String>()
     val snackbarFlow = _snackbarChannel.receiveAsFlow()
+    private val _workspaceID = dataStoreRepository.workspaceIDFlow
+    val workspaceID
+        get() = _workspaceID
 
     fun showSnackbar(message: String) {
 

@@ -1,7 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.repositories.remote
 
-import com.sleetworks.serenity.android.newone.domain.reporitories.DataStoreRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.FirebaseRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.FirebaseRepository
 
 class FirebaseRepositoryImpl(dataStoreRepository: DataStoreRepository) : FirebaseRepository {
 

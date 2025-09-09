@@ -6,7 +6,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.SiteRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SiteImageRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SitePlan
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.WorkspaceRef
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 
 class SiteConverters {
     private val gson = Gson()
