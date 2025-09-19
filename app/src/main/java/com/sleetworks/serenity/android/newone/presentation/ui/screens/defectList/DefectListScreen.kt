@@ -51,7 +51,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.R
-import com.sleetworks.serenity.android.newone.data.models.local.entities.PointEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
 import com.sleetworks.serenity.android.newone.presentation.ui.components.AppTopBar
 import com.sleetworks.serenity.android.newone.presentation.ui.components.MultiSegmentAppBarLoader

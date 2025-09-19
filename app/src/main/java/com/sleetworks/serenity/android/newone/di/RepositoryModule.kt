@@ -1,8 +1,11 @@
 package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
-import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldTemplateDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAssigneeDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointTagDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
@@ -13,7 +16,10 @@ import com.sleetworks.serenity.android.newone.data.network.RetrofitProvider
 import com.sleetworks.serenity.android.newone.data.repositories.local.CustomFieldRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.AuthRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.DataStoreRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.PointAssigneeRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.PointCustomFieldRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.PointRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.PointTagRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.ShareRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.SiteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.SyncDetailRepositoryImpl
@@ -28,9 +34,12 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRem
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.FirebaseRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointAssigneeRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointCustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointTagRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
@@ -128,7 +137,7 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideCustomFieldRepository(
-        customFieldDao: CustomFieldDao,
+        customFieldDao: CustomFieldTemplateDao,
         subListDao: SubListDao
     ): CustomFieldRepository {
         return CustomFieldRepositoryImpl(customFieldDao, subListDao)
@@ -150,6 +159,24 @@ object RepositoryModule {
     @Singleton
     fun provideSyncDetailRepository(syncDetailDao: SyncDetailDao): SyncDetailRepository {
         return SyncDetailRepositoryImpl(syncDetailDao)
+    }
+
+    @Provides
+    @Singleton
+    fun providePointTagRepository(tagPointTagDao: PointTagDao): PointTagRepository {
+        return PointTagRepositoryImpl(tagPointTagDao)
+    }
+
+    @Provides
+    @Singleton
+    fun providePointAssigneeRepository(assigneeDao: PointAssigneeDao): PointAssigneeRepository {
+        return PointAssigneeRepositoryImpl(assigneeDao)
+    }
+
+    @Provides
+    @Singleton
+    fun providePointCustomFieldRepository(pointCustomFieldDao: PointCustomFieldDao): PointCustomFieldRepository {
+        return PointCustomFieldRepositoryImpl(pointCustomFieldDao)
     }
 
 }

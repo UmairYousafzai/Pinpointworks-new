@@ -8,26 +8,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
-import com.sleetworks.serenity.android.newone.data.models.local.entities.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncDetailEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncType
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
+import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomainModel
 import com.sleetworks.serenity.android.newone.domain.models.share.ShareDomainModel
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
@@ -121,7 +122,7 @@ class PointViewModel @Inject constructor(
     val share
         get() = _share
 
-    private val _points: StateFlow<List<PointEntity?>> =
+    private val _points: StateFlow<List<Point?>> =
         _workspaceID.filter { it?.isEmpty() == false }
             .flatMapLatest { workspaceID ->
                 pointRepository.getPointByWorkspaceID(
@@ -129,6 +130,10 @@ class PointViewModel @Inject constructor(
                 )
             }
             .map {
+                it.map { point -> point.toDomain() }
+            }
+            .map {
+
                 filterDefectsByPermission(it)
             }
             .stateIn(
@@ -137,7 +142,7 @@ class PointViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    val points: StateFlow<List<PointEntity?>>
+    val points: StateFlow<List<Point?>>
         get() = _points
 
     private val _workspaces = workspaceRepository.getAllWorkspacesFlow().map { it ->
@@ -473,8 +478,8 @@ class PointViewModel @Inject constructor(
 
 
     private fun filterDefectsByPermission(
-        list: List<PointEntity?>,
-    ): List<PointEntity?> {
+        list: List<Point>,
+    ): List<Point> {
         val defectTags = share.value?.defectTags
         if (_share.value?.shareOption !in listOf(PERMISSION_LIMIT, PERMISSION_NORMAL)) {
             return list

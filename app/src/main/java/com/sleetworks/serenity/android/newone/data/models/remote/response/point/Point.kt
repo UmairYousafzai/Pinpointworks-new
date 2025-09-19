@@ -2,17 +2,15 @@ package com.sleetworks.serenity.android.newone.data.models.remote.response.point
 
 import com.google.gson.annotations.SerializedName
 import com.sleetworks.serenity.android.newone.data.models.remote.response.BaseResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
 import java.io.Serializable
 
 data class Point(
     @SerializedName("_id")
     val id: String,
     val assignees: ArrayList<String>?,
-    val customFieldSimplyList: ArrayList<CustomField>,
+    val customFieldSimplyList: ArrayList<PointCustomField>,
     val description: String?,
     val descriptionRich: String?,
     val documents: ArrayList<Document>,
@@ -28,5 +26,5 @@ data class Point(
     val videos: ArrayList<Video>,
     val workspaceRef: WorkspaceRef,
     val edited: Boolean,
-
-    ): Serializable, BaseResponse()
+    val tags: ArrayList<String>?,
+) : Serializable, BaseResponse()

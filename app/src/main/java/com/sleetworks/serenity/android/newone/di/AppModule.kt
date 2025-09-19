@@ -2,10 +2,12 @@ package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
 import androidx.room.Room
-import com.sleetworks.serenity.android.newone.data.datasource.local.dao.MainDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointDatabase
-import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldTemplateDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAssigneeDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointTagDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
@@ -40,7 +42,19 @@ object AppModule {
     fun provideSiteDao(db: PinpointDatabase): SiteDao = db.siteDao()
 
     @Provides
-    fun provideCustomFieldDao(db: PinpointDatabase): CustomFieldDao = db.customFieldDao()
+    fun provideCustomFieldTemplateDao(db: PinpointDatabase): CustomFieldTemplateDao =
+        db.customFieldTemplateDao()
+
+    @Provides
+    fun providePointCustomFieldDao(db: PinpointDatabase): PointCustomFieldDao =
+        db.pointCustomFieldDao()
+
+    @Provides
+    fun providePointTagDao(db: PinpointDatabase): PointTagDao = db.tagPointDao()
+
+    @Provides
+    fun providePointAssigneeDao(db: PinpointDatabase): PointAssigneeDao = db.assigneePointDao()
+
 
     @Provides
     fun provideSublistDao(db: PinpointDatabase): SubListDao = db.sublistDao()

@@ -1,10 +1,10 @@
 package com.sleetworks.serenity.android.newone.data.repositories.local
 
-import android.util.Log
-import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.mappers.toEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.PointEntity
+import com.sleetworks.serenity.android.newone.data.mappers.toInsertPoint
+import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
 import kotlinx.coroutines.flow.Flow
@@ -18,13 +18,11 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
     }
 
     override suspend fun insertPoints(points: List<Point>) {
-        val gson = Gson()
-        val pointEntitys = points.map {
-            it.toEntity()
-        }
-        Log.e("PointRepositoryImpl", "insertPoints: ${gson.toJson(pointEntitys)}")
+        val insertPoints = points.map {
 
-        pointDao.insertPoints(pointEntitys);
+            it.toInsertPoint()
+        }
+        pointDao.upsertPointsWithChildren(insertPoints);
 
     }
 
@@ -36,7 +34,7 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
         return pointDao.getPointByLocalId(localID)
     }
 
-    override suspend fun getPointByWorkspaceID(workspaceID: String): Flow<List<PointEntity?>> {
+    override suspend fun getPointByWorkspaceID(workspaceID: String): Flow<List<PointWithRelations>> {
         return pointDao.getPointByWorkspaceId(workspaceID)
     }
 

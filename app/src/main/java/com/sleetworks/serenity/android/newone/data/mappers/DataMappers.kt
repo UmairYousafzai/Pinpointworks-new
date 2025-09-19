@@ -2,23 +2,26 @@ package com.sleetworks.serenity.android.newone.data.mappers
 
 import android.util.Log
 import com.google.gson.Gson
-import com.sleetworks.serenity.android.newone.data.models.local.entities.CustomFieldEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.PointEntity
+import com.sleetworks.serenity.android.newone.data.models.local.InsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomFieldTemplate
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListItem
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SiteImageRef
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.SitePlan
 
 fun User.toEntity(): UserEntity {
     return UserEntity(
@@ -93,33 +96,29 @@ fun Site.toEntity(): SiteEntity {
     )
 }
 
-fun CustomField.toEntity(workspaceID: String): CustomFieldEntity {
-    return CustomFieldEntity(
-        id = this.id,
-        currency = this.currency,
-        currencyCode = this.currencyCode,
-        currencySymbol = this.currencySymbol,
-        decimalPlaces = this.decimalPlaces,
-        display = this.display,
-        formula = this.formula,
-        label = this.label,
-        lockedValue = this.lockedValue,
-        maxListIndex = this.maxListIndex,
-        nestingLevel = this.nestingLevel,
-        outputType = this.outputType,
-        showCommas = this.showCommas,
-        showHoursOnly = this.showHoursOnly,
-        showTotal = this.showTotal,
-        selectedItemIds = this.selectedItemIds,
-        subValuesActive = this.subValuesActive,
-        type = this.type,
-        unit = this.unit,
-        workspaceId = workspaceId,
-        modified = this.modified,
-        volyIntegrationActive = this.volyIntegrationActive,
-        lockedTemplate = this.lockedTemplate,
+fun CustomFieldTemplate.toEntity(workspaceID: String): CustomFieldTemplateEntity =
+    CustomFieldTemplateEntity(
+        id = id,
+        workspaceID = workspaceID,
+        label = label,
+        type = type,
+        description = description,
+        currency = currency,
+        currencyCode = currencyCode,
+        currencySymbol = currencySymbol,
+        decimalPlaces = decimalPlaces,
+        showTotal = showTotal,
+        showCommas = showCommas,
+        showHoursOnly = showHoursOnly,
+        formula = formula,
+        outputType = outputType,
+        nestingLevel = nestingLevel,
+        unit = unit,
+        display = display,
+        lockedValue = lockedValue,
+        maxListIndex = maxListIndex,
+        subListJson = subList
     )
-}
 
 fun Share.toEntity(): ShareEntity {
     return ShareEntity(
@@ -161,18 +160,20 @@ fun SubListItem.toEntity(
 fun Point.toEntity(): PointEntity {
     Log.e("Point", "toEntity: ${Gson().toJson(this)}")
 
-    val customFieldEntitys = this.customFieldSimplyList.map {
-        it.toEntity(this.workspaceRef.id)
-    } as ArrayList<CustomFieldEntity>
-
 
     return PointEntity(
         id = this.id ?: "",
         localID = this.id,
-        assignees = this.assignees ?: arrayListOf(),
-        customFieldSimplyList = customFieldEntitys,
+//        assignees = this.assignees?.map {
+//            it.toAssigneeEntity(
+//                pointId = this.id ?: ""
+//            )
+//        } as ArrayList<PointAssigneeEntity>
+//            ?: arrayListOf(),
+//        customFieldSimplyList = customFieldSimplyList.map { it.toEntity(id) } as ArrayList<PointCustomFieldEntity>,
         description = this.description ?: "",
         descriptionRich = this.descriptionRich ?: "",
+        createdBy = this.header?.createdBy?.id ?: "",
         documents = this.documents ?: arrayListOf(),
         flagged = this.flagged,
         header = this.header, // nullable, no problem
@@ -183,7 +184,11 @@ fun Point.toEntity(): PointEntity {
         priority = this.priority ?: "",
         sequenceNumber = this.sequenceNumber ?: 0,
         status = this.status ?: "",
-        tags = this.tags ?: arrayListOf(),
+//        tags = this.tags?.map {
+//            it.toTagEntity(
+//                pointId = this.id ?: ""
+//            )
+//        } as ArrayList<PointTagEntity> ?: arrayListOf(),
         title = this.title ?: "",
         videos = this.videos ?: arrayListOf(),
         workspaceRef = if (!this.workspaceRef.caption.isNullOrEmpty()) this.workspaceRef else WorkspaceRef(
@@ -194,3 +199,67 @@ fun Point.toEntity(): PointEntity {
         edited = this.edited ?: true
     )
 }
+
+
+fun String.toTagEntity(id: Int = 0, pointId: String): PointTagEntity {
+    return PointTagEntity(
+        pointId = pointId,
+        tag = this
+
+    )
+}
+
+fun String.toAssigneeEntity(id: Int = 0, pointId: String): PointAssigneeEntity {
+    return PointAssigneeEntity(
+        id = id,
+        pointId = pointId,
+        assigneeId = this,
+
+        )
+}
+
+// PointCustomFieldMappers.kt
+
+
+fun PointCustomField.toEntity(
+    pointID: String,
+    localID: Int = 0
+): PointCustomFieldEntity = PointCustomFieldEntity(
+    localID = localID,
+    pointID = pointID,
+    value = value,
+    customFieldTemplateId = customFieldTemplateId,
+    type = type,
+    label = label,
+    currency = currency,
+    currencyCode = currencyCode,
+    currencySymbol = currencySymbol,
+    unit = unit,
+    decimalPlaces = decimalPlaces,
+    showCommas = showCommas,
+    showHoursOnly = showHoursOnly,
+    idOfChosenElement = idOfChosenElement,
+    selectedItemIds = selectedItemIds
+)
+
+fun Point.toInsertPoint(
+
+): InsertPoint {
+
+
+    return InsertPoint(
+        point = this.toEntity(),
+        tags = this.tags?.map {
+            it.toTagEntity(
+                pointId = this.id ?: ""
+            )
+        } as ArrayList<PointTagEntity> ?: arrayListOf(),
+        assignees = assignees?.map {
+            it.toAssigneeEntity(
+                pointId = this.id ?: ""
+            )
+        } as ArrayList<PointAssigneeEntity>,
+        customFields = customFieldSimplyList.map { it.toEntity(id) } as ArrayList<PointCustomFieldEntity>
+    )
+}
+
