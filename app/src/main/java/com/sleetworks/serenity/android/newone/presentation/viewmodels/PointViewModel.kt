@@ -7,12 +7,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
+import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncDetailEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncType
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
-import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
@@ -20,6 +20,7 @@ import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomainModel
+import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.domain.models.share.ShareDomainModel
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
@@ -27,6 +28,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRep
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
@@ -67,6 +69,7 @@ class PointViewModel @Inject constructor(
     val customFieldRepository: CustomFieldRepository,
     val shareRepository: ShareRepository,
     val userRemoteRepository: UserRemoteRepository,
+    val userRepository: UserRepository,
     val userImageStore: UserImageStore,
     val dataStoreRepository: DataStoreRepository,
     val savedStateHandle: SavedStateHandle
@@ -122,7 +125,7 @@ class PointViewModel @Inject constructor(
     val share
         get() = _share
 
-    private val _points: StateFlow<List<Point?>> =
+    private val _points: StateFlow<List<PointDomain>> =
         _workspaceID.filter { it?.isEmpty() == false }
             .flatMapLatest { workspaceID ->
                 pointRepository.getPointByWorkspaceID(
@@ -142,7 +145,7 @@ class PointViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    val points: StateFlow<List<Point?>>
+    val points: StateFlow<List<PointDomain>>
         get() = _points
 
     private val _workspaces = workspaceRepository.getAllWorkspacesFlow().map { it ->
@@ -245,13 +248,13 @@ class PointViewModel @Inject constructor(
         }
     }
 
+
     fun syncWorkspacesData() {
 
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _loader.emit(Pair("Syncing Workspace.....", true))
-                var workspaceID = ""
                 Log.d(TAG, "syncData: start")
 
                 val userDeferred = async {
@@ -271,6 +274,11 @@ class PointViewModel @Inject constructor(
                 val sharesDeferred = async {
                     workspaceRemoteRepository.getAllShares()
                 }
+
+                val workspaceUsersDeferred = async {
+                    workspaceRemoteRepository.getWorkSpaceUsers(_workspaceID.value.toString())
+                }
+
                 _loader.emit(Pair("Fetching user data.....", true))
                 val user = userDeferred.await()
                 _loader.emit(Pair("Fetching workspaces.....", true))
@@ -279,12 +287,15 @@ class PointViewModel @Inject constructor(
                 val sites = sitesDeferred.await()
                 _loader.emit(Pair("Fetching shares.....", true))
                 val shares = sharesDeferred.await()
+                _loader.emit(Pair("Fetching workspace users.....", true))
+                val users = workspaceUsersDeferred.await()
 
 
                 if (user is Resource.Success &&
                     sites is Resource.Success &&
                     workspaces is Resource.Success &&
-                    shares is Resource.Success
+                    shares is Resource.Success &&
+                    users is Resource.Success
                 ) {
 
                     _loader.emit(Pair("Storing user data.....", true))
@@ -323,6 +334,10 @@ class PointViewModel @Inject constructor(
                         isCurrentPermissionChanged(it)
                         shareRepository.insertShares(it, _workspaceID.value ?: "")
                         validatePermission(it)
+                    }
+
+                    users.data.entity?.let {
+                        userRepository.insertUsers(it.map { item -> item.toEntity() })
                     }
                     updateSyncTime()
 
@@ -478,8 +493,8 @@ class PointViewModel @Inject constructor(
 
 
     private fun filterDefectsByPermission(
-        list: List<Point>,
-    ): List<Point> {
+        list: List<PointDomain>,
+    ): List<PointDomain> {
         val defectTags = share.value?.defectTags
         if (_share.value?.shareOption !in listOf(PERMISSION_LIMIT, PERMISSION_NORMAL)) {
             return list

@@ -8,6 +8,8 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.converters.S
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.SiteConverters
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.UserConverters
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.WorkspaceConverters
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.AssigneeDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CommentDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldTemplateDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAssigneeDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
@@ -17,23 +19,23 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SyncDetailDao
-import com.sleetworks.serenity.android.newone.data.datasource.local.dao.UserDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
-import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncDetailEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
 
 @Database(
     entities = [
-        UserEntity::class,
+        AssigneeEntity::class,
         WorkspaceEntity::class,
         SiteEntity::class,
         CustomFieldTemplateEntity::class,
@@ -44,6 +46,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
         PointAssigneeEntity::class,
         PointTagEntity::class,
         PointCustomFieldEntity::class,
+        CommentEntity::class,
     ],
     version = 1
 )
@@ -56,7 +59,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
 )
 abstract class PinpointDatabase : RoomDatabase() {
     //    abstract fun mainDaa(): MainDao
-    abstract fun userDao(): UserDao
+    abstract fun userDao(): AssigneeDao
     abstract fun workspaceDao(): WorkspaceDao
     abstract fun siteDao(): SiteDao
     abstract fun customFieldTemplateDao(): CustomFieldTemplateDao
@@ -67,4 +70,5 @@ abstract class PinpointDatabase : RoomDatabase() {
     abstract fun tagPointDao(): PointTagDao
     abstract fun assigneePointDao(): PointAssigneeDao
     abstract fun pointCustomFieldDao(): PointCustomFieldDao
+    abstract fun commentDao(): CommentDao
 }

@@ -38,4 +38,5 @@ class ShareConverters {
     fun toAdvancedAccessLevels(value: String?): AdvancedAccessLevels? =
         value?.let { gson.fromJson(it, AdvancedAccessLevels::class.java) }
 
+
 }

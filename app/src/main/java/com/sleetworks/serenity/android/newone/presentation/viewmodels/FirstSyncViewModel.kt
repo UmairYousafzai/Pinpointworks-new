@@ -3,14 +3,16 @@ package com.sleetworks.serenity.android.newone.presentation.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.utils.FIRST_SYNC
 import com.sleetworks.serenity.android.newone.utils.SITE_ID
@@ -27,11 +29,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FirstSyncViewModel @Inject constructor(
-        val workspaceRemoteRepository: WorkspaceRemoteRepository,
-        val workspaceRepository: WorkspaceRepository,
-        val siteRepository: SiteRepository,
-        val customFieldRepository: CustomFieldRepository,
-        val shareRepository: ShareRepository,
+    val workspaceRemoteRepository: WorkspaceRemoteRepository,
+    val workspaceRepository: WorkspaceRepository,
+    val siteRepository: SiteRepository,
+    val customFieldRepository: CustomFieldRepository,
+    val shareRepository: ShareRepository,
+    val userRepository: UserRepository,
     val dataStoreRepository: DataStoreRepository
 ) : ViewModel() {
 
@@ -90,6 +93,8 @@ class FirstSyncViewModel @Inject constructor(
                     workspaceRemoteRepository.getAllShares()
                 }
 
+
+
                 _message.emit("Fetching workspaces...")
                 val workspaces = workspacesDeferred.await()
                 _message.emit("Fetching sites...")
@@ -146,6 +151,24 @@ class FirstSyncViewModel @Inject constructor(
                         shareRepository.insertShares(it, workspaceID)
                     }
 
+                    val workSpaceUsersDeferred = async {
+                        workspaceRemoteRepository.getWorkSpaceUsers(workspaceID)
+                    }
+
+                    val workSpaceUsers = workSpaceUsersDeferred.await()
+                    if (workSpaceUsers is Resource.Success) {
+                        workSpaceUsers.data.entity?.let { users ->
+                            users.map { it.toEntity() }
+
+                        }
+
+                    } else if (workSpaceUsers is Resource.Error ){
+
+                        _message.emit("Sync Failed")
+                        _error.emit("Unexpected error")
+                        _success.emit(false)
+                        return@launch
+                    }
                     _message.emit("Sync complete")
                     _success.emit(true)
 
@@ -183,14 +206,14 @@ class FirstSyncViewModel @Inject constructor(
     }
 
 
-        suspend fun storeWorkspaceIDAndSiteID(workspaceID: String, siteID: String) {
+    suspend fun storeWorkspaceIDAndSiteID(workspaceID: String, siteID: String) {
 
-            if (workspaceID.isNotEmpty()) {
-                dataStoreRepository.putString(WORKSPACE_ID, workspaceID)
-                dataStoreRepository.putString(SITE_ID, siteID)
-            }
-
+        if (workspaceID.isNotEmpty()) {
+            dataStoreRepository.putString(WORKSPACE_ID, workspaceID)
+            dataStoreRepository.putString(SITE_ID, siteID)
         }
+
+    }
 
     fun saveFirstSync() {
         viewModelScope.launch {

@@ -30,6 +30,10 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
         return pointDao.getPointById(pointID)
     }
 
+    override suspend fun getPointByIDFlow(pointID: String): Flow<PointWithRelations> {
+        return pointDao.getPointByIdFlow(pointID)
+    }
+
     override suspend fun getPointByLocalID(localID: String): PointEntity? {
         return pointDao.getPointByLocalId(localID)
     }

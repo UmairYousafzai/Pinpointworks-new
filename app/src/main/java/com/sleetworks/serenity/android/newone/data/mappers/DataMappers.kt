@@ -3,17 +3,19 @@ package com.sleetworks.serenity.android.newone.data.mappers
 import android.util.Log
 import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.data.models.local.InsertPoint
+import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
-import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
@@ -23,54 +25,27 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 
-fun User.toEntity(): UserEntity {
-    return UserEntity(
+fun Assignee.toEntity(): AssigneeEntity {
+    return AssigneeEntity(
         id = this.id,
-        activeWorkspaceRef = this.activeWorkspaceRef,
-        notificationStatus = this.notificationStatus,
-        preferenceDocRef = this.preferenceDocRef,
-        header = this.header,
-        tags = this.tags ?: arrayListOf(),
+        caption = this.caption,
+        primaryImageId = this.primaryImageId,
         email = this.email,
-        enabled = this.enabled,
-        enabled2fa = this.enabled2fa,
-        images = this.images,
-        lastActivityEpochMillis = this.lastActivityEpochMillis,
-        name = this.name,
-        setup2faAfter = this.setup2faAfter,
-        timeZoneId = this.timeZoneId,
-        type = this.type,
-        userType = this.userType,
-        verified = this.verified,
-        passwordHash = this.passwordHash
+        type = this.type
+
     )
 }
 
-fun UserEntity.toDomain(): User {
-    return User(
-        activeWorkspaceRef = this.activeWorkspaceRef,
+fun AssigneeEntity.toDomain(): Assignee {
+    return Assignee(
+        id = this.id,
+        caption = this.caption,
+        primaryImageId = this.primaryImageId,
         email = this.email,
-        enabled = this.enabled,
-        enabled2fa = this.enabled2fa,
-        images = this.images,
-        lastActivityEpochMillis = this.lastActivityEpochMillis,
-        name = this.name,
-        notificationStatus = this.notificationStatus,
-        preferenceDocRef = this.preferenceDocRef,
-        setup2faAfter = this.setup2faAfter,
-        timeZoneId = this.timeZoneId,
-        type = this.type,
-        userType = this.userType,
-        verified = this.verified,
-        passwordHash = this.passwordHash,
-        id = this.id
-
-    ).apply {
-        this.header = this@toDomain.header
-        this.tags?.addAll(this@toDomain.tags)
-    }
-
+        type = this.type
+    )
 }
+
 
 fun Workspace.toEntity(): WorkspaceEntity {
     return WorkspaceEntity(
@@ -96,12 +71,16 @@ fun Site.toEntity(): SiteEntity {
     )
 }
 
-fun CustomFieldTemplate.toEntity(workspaceID: String): CustomFieldTemplateEntity =
-    CustomFieldTemplateEntity(
+fun CustomFieldTemplate.toEntities(
+    parentId: Long? = null,
+    workspaceId: String
+): List<CustomFieldTemplateEntity> {
+    val me = CustomFieldTemplateEntity(
         id = id,
-        workspaceID = workspaceID,
+        workspaceID = workspaceId,
+        parentId = parentId,
         label = label,
-        type = type,
+        type = type ?: "",
         description = description,
         currency = currency,
         currencyCode = currencyCode,
@@ -116,9 +95,11 @@ fun CustomFieldTemplate.toEntity(workspaceID: String): CustomFieldTemplateEntity
         unit = unit,
         display = display,
         lockedValue = lockedValue,
-        maxListIndex = maxListIndex,
-        subListJson = subList
+        maxListIndex = maxListIndex
     )
+    val children = subList.orEmpty().flatMap { it.toEntities(parentId = id, workspaceId) }
+    return listOf(me) + children
+}
 
 fun Share.toEntity(): ShareEntity {
     return ShareEntity(
@@ -260,6 +241,21 @@ fun Point.toInsertPoint(
             )
         } as ArrayList<PointAssigneeEntity>,
         customFields = customFieldSimplyList.map { it.toEntity(id) } as ArrayList<PointCustomFieldEntity>
+    )
+}
+
+fun Comment.toEntity(): CommentEntity {
+    return CommentEntity(
+        id = this.id,
+        comment = this.comment,
+        commentRich = this.commentRich,
+        defectRef = this.defectRef,
+        header = this.header,
+        tags = this.tags,
+        totalBytes = this.totalBytes,
+        type = this.type,
+        workspaceRef = this.workspaceRef
+
     )
 }
 

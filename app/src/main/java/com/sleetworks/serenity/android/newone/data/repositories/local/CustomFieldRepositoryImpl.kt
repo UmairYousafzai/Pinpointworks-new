@@ -2,6 +2,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldTemplateDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
+import com.sleetworks.serenity.android.newone.data.mappers.toEntities
 import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
@@ -15,21 +16,19 @@ class CustomFieldRepositoryImpl @Inject constructor(
     val subListDao: SubListDao
 ) :
     CustomFieldRepository {
-    override suspend fun insertCustomField(customField: CustomFieldTemplate, workspaceID: String) {
-        customFieldDao.insertCustomField(customField.toEntity(workspaceID));
-    }
 
-    override suspend fun insertCustomFields(customFields: List<CustomFieldTemplate>, workspaceID: String) {
-        val subListItems = arrayListOf<SubListItemEntity>()
+    override suspend fun insertCustomFields(
+        customFields: List<CustomFieldTemplate>,
+        workspaceID: String
+    ) {
 
         val customFieldEntities = customFields.map { customField ->
-            val entity = customField.toEntity(workspaceID)
+            val entity = customField.toEntities(null, workspaceID)
             entity
-        }
+        }.flatten()
         customFieldDao.insertCustomFields(customFieldEntities)
 
 
-        subListDao.insertSubLists(subListItems)
     }
 
     override suspend fun getCustomFieldByID(customFieldID: String): CustomFieldTemplateEntity? {

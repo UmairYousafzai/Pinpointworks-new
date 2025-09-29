@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.remote
 import android.content.Context
 import com.sleetworks.serenity.android.newone.data.datasource.remote.ApiService
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
@@ -41,5 +42,14 @@ class WorkspaceRemoteRepositoryImpl @Inject constructor(
         return safeApiCall(context) {
             retrofitProvider.getRetrofit().create(ApiService::class.java).getSite(siteID)
         }
+    }
+
+    override suspend fun getWorkSpaceUsers(workSpaceId: String): Resource<ApiResponse<List<Assignee>>> {
+
+        return safeApiCall(context) {
+            retrofitProvider.getRetrofit().create(ApiService::class.java)
+                .getAllWorkspaceUsers(workSpaceId)
+        }
+
     }
 }

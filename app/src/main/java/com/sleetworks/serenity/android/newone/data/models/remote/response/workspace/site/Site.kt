@@ -2,11 +2,11 @@ package com.sleetworks.serenity.android.newone.data.models.remote.response.works
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomField
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomFieldTemplate
 
 data class Site(
     val _id: String,
-    val customFields: List<CustomField>,
+    val customFields: List<CustomFieldTemplate>,
     val header: Header,
     val logoRef: LogoRef,
     val name: String,

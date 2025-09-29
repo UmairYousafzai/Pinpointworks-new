@@ -1,12 +1,14 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.screens.defectList
 
 import CircularImage
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sleetworks.serenity.android.newone.BuildConfig
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.model.UserUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.WorkspaceUiModel
@@ -42,6 +45,7 @@ import com.sleetworks.serenity.android.newone.presentation.viewmodels.PointViewM
 import com.sleetworks.serenity.android.newone.ui.theme.BrightBlue
 import com.sleetworks.serenity.android.newone.ui.theme.OuterSpace_2
 import com.sleetworks.serenity.android.newone.ui.theme.TransparentBlack
+import com.sleetworks.serenity.android.newone.ui.theme.gray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,8 +74,8 @@ fun NavigationDrawerContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+,            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
         ) {
 
             DrawerHeader(user, imageFile)
@@ -130,6 +134,8 @@ fun NavigationDrawerContent(
                 }
             }
 
+            DrawerFooter()
+
         }
     }
 
@@ -137,7 +143,7 @@ fun NavigationDrawerContent(
 
 @Composable
 fun DrawerHeader(user: UserUiModel, imageFile: File?) {
-    Box(modifier = Modifier.padding(15.dp)) {
+    Box(modifier = Modifier.fillMaxHeight(0.15f).padding(15.dp)) {
         CircularImage(user.username, imageFile)
     }
     Text(
@@ -151,6 +157,63 @@ fun DrawerHeader(user: UserUiModel, imageFile: File?) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DrawerFooter() {
+    Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(1.5f).background(color = gray), contentAlignment = Alignment.Center) {
+        Column {
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_setting),
+                    contentDescription = "Settings",
+                    tint = null
+
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(text = "Settings", fontSize = 16.sp, color = Color.White)
+
+            }
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sign_out),
+                    contentDescription = "Logout",
+                            tint = null
+
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(text = "Logout", fontSize = 16.sp, color = Color.White)
+
+            }
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_logo),
+                    contentDescription = "Logo",
+                    tint = null
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = "Version ${BuildConfig.VERSION_NAME}",
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+
+            }
+            Spacer(modifier = Modifier.height(15.dp))
+
+        }
+
+    }
+}
+
 @Composable
 fun DrawerContentItem(
     workspaces: List<WorkspaceUiModel?>,
@@ -160,7 +223,7 @@ fun DrawerContentItem(
     val grouped = workspaces.groupBy { it?.accountRef?.id }
 
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f).padding(15.dp),
         horizontalAlignment = Alignment.Start
     ) {
 

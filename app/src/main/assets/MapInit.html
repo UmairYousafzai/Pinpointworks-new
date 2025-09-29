@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>outputdir</title>
+        <meta http-equiv="imagetoolbar" content="no"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <meta name="mobile-web-app-capable" content="yes">
+
+        <style type="text/css">
+            html, body {
+                margin:0;
+                padding: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            body {
+                background: #FFFFFF;
+            }
+
+            #map { position: absolute;
+            height: 100%;
+            width: 100%;
+            background-color: #FFFFFF;
+            }
+
+            #slider {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+        </style>
+
+        <link rel="stylesheet" href="file:///android_asset/OpenLayers/ol.min.css" type="text/css">
+        <script src="file:///android_asset/OpenLayers/ol.min.js" type="text/javascript"></script>
+        <link rel="stylesheet" href="file:///android_asset/OpenLayers/ol.css" type="text/css">
+
+        <!-- The line below is only needed for old environments like Android 4.x -->
+        <script src="file:///android_asset/OpenLayers/polyfill.min.js"></script>
+        <script src="file:///android_asset/OpenLayers/ol.js"></script>
+        <script src="file:///android_asset/OpenLayers/popper.min.js"></script>
+        <script src="file:///android_asset/OpenLayers/jquery-3.6.4.min.js"></script>
+        <link rel="stylesheet" href="file:///android_asset/OpenLayers/bootstrap.min.css">
+        <script src="file:///android_asset/OpenLayers/bootstrap.min.js"></script>
+
+        <style>
+            #popup {
+                background-color: green;
+                color: red !important;
+            }
+
+            .unselectable {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+
+            .deleteItem {
+                position: absolute;
+                visibility: hidden;
+                background: #E45050;
+                color: white !important;
+                height: 32px;
+                width: 120px;
+                border: 1px solid #FFFFFF;
+                transform: translate3d(0, 0, 1px);
+                z-index: 100;
+                box-sizing: border-box;
+                box-shadow: 0px 4px 10px rgba(0, 132, 248, 0.15);
+                border-radius: 5px;
+            }
+
+            .deleteText {
+              font-style: normal;
+              font-weight: 600;
+              font-size: 14px;
+              line-height: 18px;
+              color: #FFFFFF;
+              margin: auto;
+              padding: 5px;
+              text-align: center;
+            }
+
+            .container {
+                height: 50px;
+                width: 200px;
+                padding: 0px;
+                margin: 0px;
+            }
+
+            .number {
+                width: 50px;
+                height: 50px;
+                margin: 0px;
+                padding: 0px;
+            }
+
+
+            .number, .text {
+                display: inline-block;
+                vertical-align: top;
+            }
+
+            .text__wrapper {
+                background-color: white;
+                padding: 3px 3px 3px 0px;
+                line-height: 14px;
+                width: 140px;
+                height: 41px;
+                text-align: center;
+                color: black;
+                max-width: 146px;
+                font-size: 14px;
+                overflow: hidden;
+                display: inline-flex;           
+            } 
+
+            .text {
+                line-height: 14px;
+                display: inline-block; /* in case webkit inline block isn't supported */
+                display: -webkit-inline-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                text-align: center;
+                overflow: hidden;
+                max-width: 140px;
+                margin: auto;
+            }
+
+            .number-text {
+                color: white;
+                display: block;
+                text-align: center;
+                margin-top: 3px;
+            }
+
+            .icon-1 {
+                display: block;
+                margin: 0 auto;
+                margin-top: 7px;
+                width: 15px;
+                height: 15px;
+            }
+
+            .sitePlanModeOptions {
+                visibility: hidden;
+                position: absolute;
+                width: 32px;
+                height: 64px;
+                margin-top: 85px;
+                margin-left: 8px;
+                z-index: 90;
+                border-radius: 100px;
+                background: #EBEFF1;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.25)
+            }
+
+            .clearAllModeOptions {
+                visibility: hidden;
+                position: absolute;
+                width: 32px;
+                height: 32px;
+                margin-top: 164px;
+                margin-left: 8px;
+                z-index: 90;
+                border-radius: 100px;
+                background: #EBEFF1;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.25)
+            }
+
+            .sitePlanModeOption {
+                border-radius: 100px;
+                width: 26px;
+                height: 26px;
+                display: inline-flex;
+                margin-left: 3px;
+            }
+
+            .sitePlanModeOption--polygon{
+                margin-top: 3px;
+            }
+
+            .sitePlanModeOption--pin{
+                margin-left: 3px;
+                margin-right: 3px;
+            }
+
+            .sitePlanModeOption--active {
+                background: white;
+            }
+
+            .sitePlanModeOptionImage {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                width: 70%;
+                top: 0px;
+            }
+
+            .deletePin {
+                position: absolute;
+                z-index: 100;
+                right: calc(50% - 30px);
+                bottom: 10px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                visibility: hidden;
+                background: url(file:///android_asset/MapIcons/pin_delete.svg) no-repeat center center;
+                background-color: white;
+                box-shadow: 0px 4px 50px rgba(28, 70, 120, 0.2)
+            }
+
+            .deletePin--hover {
+                background: url(file:///android_asset/MapIcons/pin_delete_hover.svg) no-repeat center center;
+                background-color: white;
+                box-shadow: 0px 4px 50px rgba(28, 70, 120, 0.2)
+            }
+
+            .ol-overlaycontainer-stopevent {
+                pointer-events: none;
+            }
+
+            .ol-zoom {
+                width: 32px;
+                height: 64px;
+                top:.5em;
+                left:.6em
+            }
+
+            .ol-zoom-in {
+                width: 32px;
+                border-top-right-radius: 50px;
+                border-top-left-radius: 50px;
+                border: 0px;
+                display: inherit;
+                height: 32px;
+                background-color: #EBEFF1;
+            }
+
+            .ol-zoom-in-container {
+                width: 25px;
+                border-bottom: 1px solid #D2D7D9;
+                height: 32px;
+                display: block;
+                transform: translateX(-2px);
+            }
+
+            .ol-zoom-in-icon {
+                transform: translateY(2px);
+                vertical-align: middle;
+            }
+
+            .ol-zoom-out {
+                width: 32px;
+                border-bottom-right-radius: 50px;
+                border-bottom-left-radius: 50px;
+                border: 0px;
+                display: inherit;
+                height: 32px;
+                margin-bottom: 6px;
+                background-color: #EBEFF1;
+                cursor: pointer;
+            }
+
+            .ol-custom-settings {
+                position: absolute;
+                top: 75px;
+                left: 12px;
+                bottom: unset;
+                right: unset;
+            }
+
+            .ol-control {
+                position: absolute;
+                width: 32px;
+                border: none;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.25);
+                background-color: #EBEFF1;
+                border-radius: 50px;
+                padding: 0;
+                pointer-events: all;
+            }
+
+            .ol-custom-control {
+                width: 32px;
+                height: 32px;
+                border: none;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.25);
+                background-color: #EBEFF1;
+                border-radius: 50px;
+                padding: 0;
+            }
+
+            .ol-control button {
+                height: 32px;
+                width: 32px;
+                margin: 0;
+                outline: none;
+            }
+
+            .ol-control button:active {
+                background-color: #D2D7D9;
+            }
+
+            /* The Modal (background) */
+            .modal {
+              display: none; /* Hidden by default */
+              position: fixed; /* Stay in place */
+              z-index: 100; /* Sit on top */
+              padding-top: 50%; /* Location of the box */
+              left: 0;
+              top: 0;
+              box-shadow: 0;
+              width: 100%; /* Full width */
+              height: 100%; /* Full height */
+              overflow: auto; /* Enable scroll if needed */
+              background-color: rgb(0,0,0); /* Fallback color */
+              background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            }
+
+            .modal-header {
+                padding: 14px 21px 30px 21px;
+                border-bottom: 0;
+                border-radius: 5px 5px 0 0;
+                margin: auto;
+                background: #24292D;
+                height: 22px;
+                width: 80%;
+                z-index: 100;
+            }
+
+            /* Modal Content */
+            .modal-content {
+                margin: auto;
+                display: flex;
+                width: 80%;
+                align-items: center;
+                padding: 30px 21px 15px 21px;
+                border: 0;
+                box-shadow: none;
+                border-radius: 0;
+                height: 50px;
+                z-index: 100;
+            }
+
+            .modal-footer {
+                margin: auto;
+                align-items: center;
+                border: 0;
+                box-shadow: none;
+                border-radius: 0 0 5px 5px;
+                background: white;
+                height: 60px;
+                z-index: 100;
+                width: 80%;
+            }
+
+            .cancelModalBtn {
+                background-color: Transparent;
+                border: 1px solid #FFF;
+                float: left;
+                height: 30px;
+                width: 50px;
+            }
+
+            .confirmModalBtn {
+                background-color: #e54f50;
+                border: none;
+                border-radius: 3px;
+                color: white;
+                float: right;
+                height: 30px;
+                width: 80px;
+            }
+
+            /* The snackbar - position it at the bottom and in the middle of the screen */
+            .snackbar {
+              visibility: hidden; /* Hidden by default. Visible on click */
+              min-width: 300px; /* Set a default minimum width */
+              margin-left: -150px; /* Divide value of min-width by 2 */
+              background-color: #333; /* Black background color */
+              color: #fff; /* White text color */
+              text-align: center; /* Centered text */
+              border-radius: 2px; /* Rounded borders */
+              padding: 16px; /* Padding */
+              position: fixed; /* Sit on top of the screen */
+              z-index: 1; /* Add a z-index if needed */
+              left: 50%; /* Center the snackbar */
+              right: 20%;
+              bottom: 30px; /* 30px from the bottom */
+            }
+
+            /* Show the snackbar when clicking on a button (class added with JavaScript) */
+            /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+            However, delay the fade out process for 2.5 seconds */
+            #pinNumberExceeded.showSnackbar {
+              visibility: visible; /* Show the snackbar */
+              -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            }
+            #polygonNumberExceeded.showSnackbar {
+                visibility: visible; /* Show the snackbar */
+                -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            }
+            #createPinSnackbar.showSnackbar {
+              visibility: visible; /* Show the snackbar */
+              -webkit-animation: fadein 0.5s, fadeout 0.5s 5s;
+            }
+            #createPolygonSnackbar.showSnackbar {
+              visibility: visible; /* Show the snackbar */
+              -webkit-animation: fadein 0.5s, fadeout 0.5s 5s;
+            }
+            #finishPolygonSnackbar.showSnackbar {
+              visibility: visible; /* Show the snackbar */
+            }
+            #editPolygonSnackbar.showSnackbar {
+              visibility: visible; /* Show the snackbar */
+              -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            }
+
+            /* Animations to fade the snackbar in and out */
+            @-webkit-keyframes fadein {
+              from {bottom: 0; opacity: 0;}
+              to {bottom: 30px; opacity: 1;}
+            }
+            @-webkit-keyframes fadeout {
+              from {bottom: 30px; opacity: 1;}
+              to {bottom: 0; opacity: 0;}
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="map" class="map">
+            <div id="popup"></div>
+            <div id="deleteArea" class="deleteItem" onclick="onDeleteAreaClick()">
+                <p id="deleteAreaText" class="deleteText">Delete Area</p>
+            </div>
+            <div id="deleteVertice" class="deleteItem" onclick="onDeleteVerticeClick()">
+                <p id="deleteVerticeText" class="deleteText">Delete Pin</p>
+            </div>
+            <div id="deletePin" class="deletePin"></div>
+            <div id="sitePlanModeOptions" class="sitePlanModeOptions unselectable">
+                <div id ="sitePlanModeOptionPolygon" class="sitePlanModeOption sitePlanModeOption--polygon" onclick="onPolygonModeClick()" >
+                    <img id="polygonIcon" class="sitePlanModeOptionImage"
+                         src="file:///android_asset/MapIcons/polygon_inactive.svg">
+                </div>
+                <div id="sitePlanModeOptionPin" class="sitePlanModeOption sitePlanModeOption--pin sitePlanModeOption--active" onclick="onPinModeClick()">
+                    <img id="pinIcon" class="sitePlanModeOptionImage"
+                         src="file:///android_asset/MapIcons/pin_active.svg">
+                </div>
+            </div>
+            <div id="clearAllModeOptions" class="clearAllModeOptions">
+                <div class="sitePlanModeOption sitePlanModeOption--polygon" onclick="onClearAllModeClick()" >
+                    <img id="clearIcon" class="sitePlanModeOptionImage"
+                         src="file:///android_asset/MapIcons/pin_delete.svg">
+                </div>
+            </div>
+
+            <div id="deletePolygonAreaModal" class="modal">
+                <div class="modal-header">
+                    <p style="color:white;">Delete area</p>
+                </div>
+                <!-- Modal content -->
+                <div class="modal-content">
+                    <p>Are you sure you want to delete the entire area?</p>
+                </div>
+                <div class="modal-footer">
+                    <!-- Confirm switch button -->
+                    <button class="cancelModalBtn" id="cancelDeleteArea">Cancel</button>
+                    <button class="confirmModalBtn" id="confirmDeleteArea">Confirm</button>
+                </div>
+            </div>
+            <div id="deleteLocationsModal" class="modal">
+                <div class="modal-header">
+                    <p style="color:white;">Clear locations</p>
+                </div>
+                <!-- Modal content -->
+                <div class="modal-content">
+                    <p>Are you sure you want to clear all locations?</p>
+                </div>
+                <div class="modal-footer">
+                    <!-- Confirm switch button -->
+                    <button class="cancelModalBtn" id="cancelDeleteLocations">Cancel</button>
+                    <button class="confirmModalBtn" id="confirmDeleteLocations">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pinNumberExceeded" class="snackbar">The maximum number of pins is 30.</div>
+        <div id="polygonNumberExceeded" class="snackbar">The maximum number of areas is 30.</div>
+        <div id="createPinSnackbar" class="snackbar">Click or tap to add up to 30 pins. Drag and drop to edit a pin's location.</div>
+        <div id="createPolygonSnackbar" class="snackbar">Tap the first pin location to complete the area. Tap a vertice to delete it. Tap and hold a vertice to edit it. Click inside the area to delete the full area.</div>
+        <div id="finishPolygonSnackbar" class="snackbar">Tap the first or last pin location to complete the area.</div>
+        <div id="editPolygonSnackbar" class="snackbar">Drag to edit an area.</div>
+
+        <script type="text/javascript">

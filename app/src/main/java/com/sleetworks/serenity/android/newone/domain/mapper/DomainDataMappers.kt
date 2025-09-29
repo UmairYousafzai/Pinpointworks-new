@@ -1,11 +1,13 @@
 package com.sleetworks.serenity.android.newone.domain.mapper
 
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
+import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
-import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
+import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 
 fun PointCustomFieldEntity.toDomain(): PointCustomField = PointCustomField(
     value = value,
@@ -31,10 +33,26 @@ fun PointAssigneeEntity.toDomain(): String {
     return assigneeId;
 }
 
+fun CommentEntity.toDomain(): Comment {
+    return Comment(
+        id = id,
+        comment = comment,
+        commentRich = commentRich,
+        defectRef = defectRef,
+        header = header,
+        tags = tags,
+        totalBytes = totalBytes,
+        type = type,
+        workspaceRef = workspaceRef
 
-fun PointWithRelations.toDomain(): Point {
-    return Point(
+    )
+}
+
+fun PointWithRelations.toDomain(): PointDomain {
+    return PointDomain(
         id = point.id,
+        localId = point.localID,
+        isModified = point.isModified,
         assignees = ArrayList(assignees.map { it.assigneeId }),
         customFieldSimplyList = customFields.map { it.toDomain() } as ArrayList<PointCustomField>,
         description = point.description,
@@ -52,6 +70,7 @@ fun PointWithRelations.toDomain(): Point {
         videos = point.videos,
         workspaceRef = point.workspaceRef,
         edited = point.edited,
-        tags = ArrayList(tags.map { it.tag })
+        tags = ArrayList(tags.map { it.tag }),
+        comments = ArrayList(comments.map { it.toDomain() })
     )
 }

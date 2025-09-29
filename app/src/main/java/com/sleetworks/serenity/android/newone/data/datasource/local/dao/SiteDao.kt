@@ -1,14 +1,9 @@
 package com.sleetworks.serenity.android.newone.data.datasource.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.WorkspaceEntity
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import kotlinx.coroutines.flow.Flow
 
 @Dao

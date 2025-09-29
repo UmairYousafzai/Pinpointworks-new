@@ -1,10 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.models.remote.response.auth
 import com.google.gson.annotations.SerializedName
-import com.sleetworks.serenity.android.newone.data.models.local.entities.UserEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.BaseResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import java.io.Serializable
-
 
 
 data class User(
@@ -24,5 +21,7 @@ data class User(
     var type: String,
     var userType: String,
     var verified: Boolean,
-    var passwordHash: String
-): Serializable, BaseResponse()
+    var passwordHash: String,
+    val tags: ArrayList<String>?,
+
+    ): Serializable, BaseResponse()

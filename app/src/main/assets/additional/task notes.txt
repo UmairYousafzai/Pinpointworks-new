@@ -1,0 +1,78 @@
+Site
+SitePlan
+LoadTilesTask
+
+DefectListFragment -> 
+row 167...179	check for tiles exist on server. 
+row 178		if no - download full sitemap throw SitemapStore.getSitemapFile(...)
+
+AddPointLocationFragment - fragment with map (now image, should be map with tiles images)
+map filled in onResume() -> fill(File mapImageFile, View view, DefectState defectState, LocalCompositeDefect defect)
+
+****************************************************************************************************************************************************************************************************
+
+/data/user/0/com.sleetworks.serenity.android/files/4a9a9e6feecf5edffe0ec6fb1ca94404/sitemap/0c533fd76ac3c4d7396d91d0b6818964            - absolute path to existing large image
+
+****************************************************************************************************************************************************************************************************
+
+/data/user/0/com.sleetworks.serenity.android/files/4a9a9e6feecf5edffe0ec6fb1ca94404/4a9a9e6feecf5edffe0ec6fb1ca9344c-tiles/0/0/0.png    - absolute path to tiles image
+
+****************************************************************************************************************************************************************************************************
+
+tilesImages downloaded during app firs start after initialization
+
+add to build.gradle  implementation 'org.apache.portals.jetspeed-2:jetspeed-fileutils-maven-plugin:2.3.1'
+
+AddPointActivity.SavePoint() -> DefectListActivity.onResume() -> DefectListFragment.onResume()
+
+DefectListRamStore.getAllPages() - скільки завантажуєтсья дефектів (і чому не всі)?
+
+****************************************************************************************************************************************************************************************************
+
+downloadImageLargeSizeFile - викачує велике фото (OriginalCachingService, DefectsImagesSyncManager - в ньому забираємо)
+DefectsImagesSyncManager - в DefectsSyncService
+DefectsSyncService - відповідає за всю синхронізацію (при старті, або при свайп рефреші)
+OriginalCachingService - підгружає картинку в детальній якщо її ще нема
+підгрузку тайлів(або картинки карти) перенести в DefectsSyncService після всього
+DefectsSyncService зразу після загрузки картинок витягуємо решту тайлів, якщо потрібно (якщо це сайт з тайлами і якщо ще всі не завантажено)
+downloadImageOriginalFile - викачує картинку карти (забрати зі всіх місць де це використовується)
+забрати з класу синхронізації
+- getDefectComments,
+
+- getVideoListFromDefect,
+
+- getDocumentListFromDefect
+
+DefectsImagesSyncManager.cacheImages викачуємо тільки для точок з потрібними статусами
+
+------------------------------------------
+
+детальна
+
+викачуємо малі картинки
+
+викачуємо відео
+
+викачуємо документи
+
+getDefectComments(...)
+
+****************************************************************************************************************************************************************************************************
+
+DefectListFragment.onItemClick(...) -> DefectListActivity.viewDefect(...)
+
+AddPointLocationFragment
+
+
+DefectsSyncService.syncWorkspaces(...) -> DefectsImagesSyncManager.cacheImages(...) -> ServiceImageHelper.cacheThumbnailWithBroadcasts(...)
+
+//sync issue: defects sync with web here:
+DefectListFragment.syncSites() -> SyncWorkspacesTask.doInBackground() ->
+SitesSyncManager.syncSites() -> DefectsSyncService.doWakefulWork(...)
+DefectsSyncService.syncWorkspaces(...)-> DefectsSyncManager.syncWorkspace(...) ->
+DefectsSyncManager.syncWorkspace(...) -> DefectsSyncManager.uploadNewAndModifiedDefects(...) ->
+DefectClient.addDefect(...) -> PinpointWorksClient.postJson(...)
+
+DefectClient.updateDefect(...) -> rows 276-288 entityJsonStr = {"customFieldSimplyList":[],"departments":[],"description":"","documents":[],"header":{"createdEpochMillis":1538150313611},"_id":"fcd9331390e273986c0ad25474507a4e","images":[],"pin":{"x":4051.8037,"y":883.15436},"priority":"MEDIUM","_rev":"5-90bac73f846fa310ce844fe128513f15","sequenceNumber":18,"status":"IN_PROGRESS","tags":[],"title":"Test_spanish_ñç","type":"DefectType","videos":[],"workspaceRef":{"id":"7d2c78676042dcfcfdd641549452d0ae"}}
+
+

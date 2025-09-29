@@ -1,11 +1,12 @@
 package com.sleetworks.serenity.android.newone.data.datasource.remote
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
@@ -80,9 +81,28 @@ interface ApiService {
     @GET("v1/images/{imageId}/file/size/square/200")
     suspend fun downloadImageThumbFile(@Path("imageId") imageId: String): Response<ResponseBody>
 
+    /////////// comment  //////////////
+
+    @POST("comments/points/{id}")
+    suspend fun addComment(
+        @Path("id") pointId: String,
+        @Body comment: Comment
+
+    ): Response<ApiResponse<Comment>>
+
+
+    @GET("comments/points/{id}")
+    suspend fun getCommentPoint(@Path("id") pointId: String): Response<ApiResponse<List<Comment>>>
+
+
     /////////// user //////////////
     @GET("v1/users/self")
     suspend fun getSelfAccount(): Response<ApiResponse<User>>
+
+    @GET("v1/workspace/{id}/users")
+    suspend fun getAllWorkspaceUsers(@Path("id") id: String): Response<ApiResponse<List<Assignee>>>
+
+
 //
 //    @POST("points")
 //    fun addDefects(

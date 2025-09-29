@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.domain.reporitories.remote
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
@@ -12,4 +13,5 @@ interface WorkspaceRemoteRepository {
     suspend fun getAllSites(): Resource<ApiResponse<List<Site>>>
     suspend fun getAllShares(): Resource<ApiResponse<List<Share>>>
     suspend fun getSiteByID(siteID: String): Resource<ApiResponse<Site>>
+    suspend fun getWorkSpaceUsers(workSpaceId: String): Resource<ApiResponse<List<Assignee>>>
 }

@@ -7,9 +7,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.RichTextEditorScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.LoginScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.SyncScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.defectList.DefectListScreen
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDetail.DefectDetailScreen
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
 
 @Composable
@@ -21,7 +23,7 @@ fun Navigation(
 ) {
     var startDestination = Screen.LoginScreen.route
     if (isFirstSync) {
-        startDestination = Screen.DefectListScreen.route+"/"+false
+        startDestination = Screen.DefectListScreen.route + "/" + false
     } else if (isLoggedIn) {
         startDestination = Screen.SyncScreen.route
     }
@@ -39,10 +41,29 @@ fun Navigation(
             SyncScreen(navController, sharedViewModel = sharedViewModel)
         }
         composable(
-            Screen.DefectListScreen.route+"/{shouldSyncPoint}",
+            Screen.DefectListScreen.route + "/{shouldSyncPoint}",
             arguments = listOf(navArgument("shouldSyncPoint") { type = NavType.BoolType })
         ) { backStackEntry ->
             DefectListScreen(navController, sharedViewModel)
+        }
+
+        composable(
+            route = Screen.DefectDetailScreen.route+"/{pointId}",
+            arguments = listOf(navArgument("pointId") { type = NavType.StringType })
+
+        ) { backStackEntry ->
+
+            DefectDetailScreen(navController)
+        }
+
+        composable(
+            route = Screen.RichTextEditorScreen.route + "/{fieldType}/{initialValue}",
+            arguments = listOf(
+                navArgument("fieldType") { type = NavType.StringType },
+                navArgument("initialValue") { type = NavType.StringType })
+
+        ) { backStackEntry ->
+            RichTextEditorScreen(navController = navController)
         }
 
 //        composable(

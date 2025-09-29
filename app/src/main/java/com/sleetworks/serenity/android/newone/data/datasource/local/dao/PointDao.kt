@@ -6,7 +6,6 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.InsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
-import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
@@ -60,6 +59,9 @@ interface PointDao {
 
     @Query("SELECT * FROM point WHERE id = :pointID")
     suspend fun getPointById(pointID: String): PointEntity?
+
+    @Query("SELECT * FROM point WHERE id = :pointID")
+    suspend fun getPointByIdFlow(pointID: String): Flow<PointWithRelations>
 
     @Query("SELECT * FROM point WHERE local_id = :localID")
     suspend fun getPointByLocalId(localID: String): PointEntity?

@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.DrawerState
@@ -51,8 +52,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.R
-import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
-import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
+import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
+import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
 import com.sleetworks.serenity.android.newone.presentation.ui.components.AppTopBar
 import com.sleetworks.serenity.android.newone.presentation.ui.components.MultiSegmentAppBarLoader
 import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemPriority
@@ -109,7 +110,7 @@ fun DefectListScreen(
         drawerContent = {
             NavigationDrawerContent(scope, drawerState, pointViewModel)
         }) {
-        MainContent(pointViewModel, drawerState)
+        MainContent(pointViewModel, navController, drawerState)
 
     }
 
@@ -117,7 +118,10 @@ fun DefectListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainContent(pointViewModel: PointViewModel, drawerState: DrawerState) {
+fun MainContent(
+    pointViewModel: PointViewModel, navController: NavController,
+    drawerState: DrawerState
+) {
     val scope = rememberCoroutineScope()
     val isRefreshing by pointViewModel.loader.collectAsState()
     val points by pointViewModel.points.collectAsState()
@@ -136,7 +140,14 @@ fun MainContent(pointViewModel: PointViewModel, drawerState: DrawerState) {
         ) {
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AppTopBar(scope, drawerState, workspace?.toUiModel(false))
+                AppTopBar(
+                    scope,
+                    drawerState,
+                    title = workspace?.accountRef?.caption ?: "",
+                    subTitle = workspace?.siteName ?: "",
+                    shouldDrawerIntegrate = true,
+                    actionIcons = listOf(Pair("More", Icons.Default.MoreVert))
+                )
 
                 Text(
                     modifier = Modifier
@@ -164,9 +175,11 @@ fun MainContent(pointViewModel: PointViewModel, drawerState: DrawerState) {
                     contentPadding = PaddingValues(4.dp)
                 ) {
 
-                    items(points, key = { point -> point?.id ?: "" }) { point ->
+                    items(points, key = { point ->
+                        point.id
+                    }) { point ->
                         DefectListItem(point) {
-
+                            navController.navigate(Screen.DefectDetailScreen.route + "/" + point.id)
                         }
                     }
                 }
@@ -268,7 +281,7 @@ fun MessageBox(message: String) {
 }
 
 @Composable
-fun DefectListItem(point: PointEntity?, onClick: () -> Unit) {
+fun DefectListItem(point: PointDomain?, onClick: () -> Unit) {
 
     Card(
         modifier = Modifier

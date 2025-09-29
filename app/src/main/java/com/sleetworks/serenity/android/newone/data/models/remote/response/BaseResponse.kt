@@ -8,5 +8,4 @@ import java.io.Serializable
 
      @SerializedName("_rev")
      var header: Header? = null
-     var tags: ArrayList<String>? = arrayListOf()
  }

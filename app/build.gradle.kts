@@ -126,7 +126,7 @@ dependencies {
     //coil
     implementation(libs.coil.compose)
 
-
+    implementation(libs.compose.webview)
 
 }
 

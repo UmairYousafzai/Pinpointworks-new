@@ -10,9 +10,10 @@ interface PointRepository {
     suspend fun insertPoint(point: Point)
     suspend fun insertPoints(points: List<Point>)
     suspend fun getPointByID(pointID: String): PointEntity?
+    suspend fun getPointByIDFlow(pointID: String): Flow<PointWithRelations>
     suspend fun getPointByLocalID(localID: String): PointEntity?
     suspend fun getPointByWorkspaceID(workspaceID: String): Flow<List<PointWithRelations>>
     suspend fun getAllPoints(): List<PointEntity?>
-    suspend fun deletePointByID(pointIDs: List<String>):Int
-    suspend fun deletePointByWorkspaceID(workspaceID: String):Int
+    suspend fun deletePointByID(pointIDs: List<String>): Int
+    suspend fun deletePointByWorkspaceID(workspaceID: String): Int
 }

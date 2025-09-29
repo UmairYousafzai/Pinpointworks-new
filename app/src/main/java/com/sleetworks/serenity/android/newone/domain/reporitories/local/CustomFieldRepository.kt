@@ -5,7 +5,6 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 
 interface CustomFieldRepository {
 
-    suspend fun insertCustomField(customField: CustomFieldTemplate,workspaceID: String)
     suspend fun insertCustomFields(customFields: List<CustomFieldTemplate>,workspaceID: String)
     suspend fun getCustomFieldByID(customFieldID: String): CustomFieldTemplateEntity?
     suspend fun getAllCustomFields(): List<CustomFieldTemplateEntity?>
