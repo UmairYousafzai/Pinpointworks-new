@@ -53,7 +53,7 @@ fun PointWithRelations.toDomain(): PointDomain {
         id = point.id,
         localId = point.localID,
         isModified = point.isModified,
-        assignees = ArrayList(assignees.map { it.assigneeId }),
+        assigneeIds = ArrayList(assignees.map { it.assigneeId }),
         customFieldSimplyList = customFields.map { it.toDomain() } as ArrayList<PointCustomField>,
         description = point.description,
         descriptionRich = point.descriptionRich,
@@ -71,6 +71,10 @@ fun PointWithRelations.toDomain(): PointDomain {
         workspaceRef = point.workspaceRef,
         edited = point.edited,
         tags = ArrayList(tags.map { it.tag }),
-        comments = ArrayList(comments.map { it.toDomain() })
+        header = point.header,
+        comments = ArrayList(comments.map { it.toDomain() }),
+        updatedAt = point.updatedAt
+
     )
 }
+

@@ -48,19 +48,33 @@ fun Navigation(
         }
 
         composable(
-            route = Screen.DefectDetailScreen.route+"/{pointId}",
+            route = Screen.DefectDetailScreen.route + "/{pointId}",
             arguments = listOf(navArgument("pointId") { type = NavType.StringType })
 
         ) { backStackEntry ->
 
-            DefectDetailScreen(navController)
+            DefectDetailScreen(
+                navController,
+                sharedViewModel = sharedViewModel
+            )
         }
 
         composable(
-            route = Screen.RichTextEditorScreen.route + "/{fieldType}/{initialValue}",
+            route = Screen.RichTextEditorScreen.route + "/{fieldType}/{customFieldId}/{customFieldTempId}/{initialValue}",
             arguments = listOf(
-                navArgument("fieldType") { type = NavType.StringType },
-                navArgument("initialValue") { type = NavType.StringType })
+                navArgument("fieldType") {
+                    type = NavType.StringType
+                },
+                navArgument("customFieldId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("customFieldTempId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("initialValue") { type = NavType.StringType }
+            )
 
         ) { backStackEntry ->
             RichTextEditorScreen(navController = navController)

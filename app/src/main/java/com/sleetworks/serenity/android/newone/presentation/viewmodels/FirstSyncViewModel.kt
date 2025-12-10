@@ -89,6 +89,7 @@ class FirstSyncViewModel @Inject constructor(
                     workspaceRemoteRepository.getAllWorkspaces()
                 }
 
+
                 val sharesDeferred = async {
                     workspaceRemoteRepository.getAllShares()
                 }
@@ -120,6 +121,8 @@ class FirstSyncViewModel @Inject constructor(
 
                     }
 
+
+
                     if (workspaceID.isEmpty()) {
                         _message.emit("Sync Failed")
                         _error.emit("Unexpected error")
@@ -127,6 +130,13 @@ class FirstSyncViewModel @Inject constructor(
                         return@launch
                     }
 
+                    val result = getAndStoreWorkSpaceUser(workspaceID)
+                    if (!result) {
+                        _message.emit("Sync Failed")
+                        _error.emit("Unexpected error")
+                        _success.emit(false)
+                        return@launch
+                    }
 
                     _message.emit("Storing sites...")
                     sites.data.entity?.let {
@@ -158,11 +168,11 @@ class FirstSyncViewModel @Inject constructor(
                     val workSpaceUsers = workSpaceUsersDeferred.await()
                     if (workSpaceUsers is Resource.Success) {
                         workSpaceUsers.data.entity?.let { users ->
-                            users.map { it.toEntity() }
+                            users.map { it.toEntity(workspaceID) }
 
                         }
 
-                    } else if (workSpaceUsers is Resource.Error ){
+                    } else if (workSpaceUsers is Resource.Error) {
 
                         _message.emit("Sync Failed")
                         _error.emit("Unexpected error")
@@ -205,6 +215,26 @@ class FirstSyncViewModel @Inject constructor(
         }
     }
 
+    suspend fun getAndStoreWorkSpaceUser(workspaceID: String): Boolean {
+
+        val result = workspaceRemoteRepository.getWorkSpaceUsers(workspaceID)
+
+        if (result is Resource.Success) {
+            val users = result.data.entity
+            users?.let {
+                userRepository.insertUsers(it.map { item ->
+                    item.toEntity(
+                        workspaceID
+                    )
+                })
+            }
+            return true
+        } else {
+            return false
+        }
+
+
+    }
 
     suspend fun storeWorkspaceIDAndSiteID(workspaceID: String, siteID: String) {
 

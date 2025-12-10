@@ -1,11 +1,7 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.model
 
 import androidx.annotation.DrawableRes
-import androidx.compose.ui.graphics.Color
 import com.sleetworks.serenity.android.newone.R
-import com.sleetworks.serenity.android.newone.ui.theme.CornflowerBlue
-import com.sleetworks.serenity.android.newone.ui.theme.DarkSalmonPink
-import com.sleetworks.serenity.android.newone.ui.theme.Goldenrod
 
 sealed class PointItemStatus(val label: String, @DrawableRes val icon: Int) {
 
@@ -26,6 +22,19 @@ sealed class PointItemStatus(val label: String, @DrawableRes val icon: Int) {
                 "completed" -> Completed
                 "canceled" -> Canceled
                 else -> Canceled
+            }
+
+        }
+
+        fun toUpperValue(status: String): String {
+            return when (status) {
+                "Open" -> "OPEN"
+                "In Progress" -> "IN_PROGRESS"
+                "To Review" -> "TO_REVIEW"
+                "On Hold" -> "ONHOLD"
+                "Completed" -> "CLOSED"
+                "Canceled" -> "CANCELED"
+                else -> "CANCELED"
             }
 
         }

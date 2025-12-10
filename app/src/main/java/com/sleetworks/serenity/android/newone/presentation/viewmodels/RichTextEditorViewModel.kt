@@ -35,6 +35,14 @@ class RichTextEditorViewModel @Inject constructor(
     val fieldType: StateFlow<String>
         get() = _fieldType
 
+    private val _customFieldId: MutableStateFlow<String> = MutableStateFlow("")
+    val customFieldId: StateFlow<String>
+        get() = _customFieldId
+
+    private val _customFieldTempId: MutableStateFlow<String> = MutableStateFlow("")
+    val customFieldTempId: StateFlow<String>
+        get() = _customFieldTempId
+
     private val _initialValue: MutableStateFlow<String> = MutableStateFlow("")
     val initialValue: StateFlow<String>
         get() = _initialValue
@@ -58,10 +66,11 @@ class RichTextEditorViewModel @Inject constructor(
     init {
         _fieldType.value = savedStateHandle.get<String>("fieldType") ?: ""
         _initialValue.value = savedStateHandle.get<String>("initialValue") ?: ""
+        _customFieldId.value = savedStateHandle.get<String>("customFieldId") ?: ""
     }
 
     private suspend fun getUsers(): List<Assignee> {
-        return userRepository.getAllUsers().map {
+        return userRepository.getUserByWorkspaceId(_workspaceID.value ?: "").map {
             it.toDomain()
         }
     }

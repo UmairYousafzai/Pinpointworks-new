@@ -128,6 +128,10 @@ dependencies {
 
     implementation(libs.compose.webview)
 
+    implementation(libs.annotatedtext)
+
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+
 }
 
 

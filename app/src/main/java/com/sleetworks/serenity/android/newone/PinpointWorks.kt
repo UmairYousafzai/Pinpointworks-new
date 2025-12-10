@@ -1,7 +1,7 @@
 package com.sleetworks.serenity.android.newone
 
 import android.app.Application
-import com.sleetworks.serenity.android.newone.utils.TextRichOptions
+import androidx.appcompat.app.AppCompatDelegate
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
@@ -10,7 +10,7 @@ class PinpointWorks: Application() {
 
     override fun onCreate() {
         super.onCreate()
-
-        TextRichOptions.convertBase64ToRichContentString()
+        // Force light mode - prevent dark mode regardless of system settings
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
     }
 }

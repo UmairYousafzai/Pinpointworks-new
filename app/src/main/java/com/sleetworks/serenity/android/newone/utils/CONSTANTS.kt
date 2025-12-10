@@ -8,4 +8,7 @@ object CONSTANTS {
     const val PERMISSION_NORMAL: String = "NORMAL"
     const val PERMISSION_OWNER: String = "OWNER"
     const val PERMISSION_ACCOUNT_ADMIN: String = "ACCOUNT_ADMIN"
+    const val CF_TEMPLATE: String = "customFieldTemplateId"
+    const val VALUE: String = "value"
+
 }

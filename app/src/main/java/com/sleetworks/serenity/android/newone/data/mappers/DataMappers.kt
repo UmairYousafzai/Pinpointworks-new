@@ -25,14 +25,14 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 
-fun Assignee.toEntity(): AssigneeEntity {
+fun Assignee.toEntity(workspaceID: String): AssigneeEntity {
     return AssigneeEntity(
         id = this.id,
         caption = this.caption,
         primaryImageId = this.primaryImageId,
         email = this.email,
-        type = this.type
-
+        type = this.type,
+        workspaceId = workspaceID
     )
 }
 
@@ -74,8 +74,8 @@ fun Site.toEntity(): SiteEntity {
 fun CustomFieldTemplate.toEntities(
     parentId: Long? = null,
     workspaceId: String
-): List<CustomFieldTemplateEntity> {
-    val me = CustomFieldTemplateEntity(
+): CustomFieldTemplateEntity {
+    return CustomFieldTemplateEntity(
         id = id,
         workspaceID = workspaceId,
         parentId = parentId,
@@ -95,10 +95,14 @@ fun CustomFieldTemplate.toEntities(
         unit = unit,
         display = display,
         lockedValue = lockedValue,
-        maxListIndex = maxListIndex
+        maxListIndex = maxListIndex,
+        lockedTemplate = lockedTemplate,
+        volyIntegrationActive = volyIntegrationActive,
+        subValuesActive = subValuesActive,
+        subList = subList,
+        saveAt = System.currentTimeMillis()
     )
-    val children = subList.orEmpty().flatMap { it.toEntities(parentId = id, workspaceId) }
-    return listOf(me) + children
+
 }
 
 fun Share.toEntity(): ShareEntity {
@@ -177,7 +181,8 @@ fun Point.toEntity(): PointEntity {
             this.workspaceRef.id
         ),
         isModified = false,
-        edited = this.edited ?: true
+        edited = this.edited ?: true,
+        updatedAt = header?.updatedEpochMillis?:0
     )
 }
 
@@ -258,4 +263,6 @@ fun Comment.toEntity(): CommentEntity {
 
     )
 }
+
+
 

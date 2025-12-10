@@ -18,8 +18,8 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["assignee_id", "point_id"])]
 )
 data class PointAssigneeEntity(
-    @PrimaryKey
-    val id: Int,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int=0,
     @ColumnInfo(name = "point_id")
     val pointId: String,
     @ColumnInfo(name = "assignee_id")

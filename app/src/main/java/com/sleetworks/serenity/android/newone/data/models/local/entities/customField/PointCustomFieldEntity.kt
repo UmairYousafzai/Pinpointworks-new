@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListOfTotal
 
 @Entity(
     tableName = "point_custom_fields",
@@ -44,5 +45,8 @@ data class PointCustomFieldEntity(
     @ColumnInfo(name = "id_of_chosen_element")
     val idOfChosenElement: String? = null,
     @ColumnInfo(name = "selected_item_ids")
-    val selectedItemIds: List<String>? = null
+    val selectedItemIds: List<String>? = null,
+    @ColumnInfo(name = "sub_values")
+    val subValues: List<SubListOfTotal>? = null
+
 )

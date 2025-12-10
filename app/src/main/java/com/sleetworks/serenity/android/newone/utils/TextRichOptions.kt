@@ -23,14 +23,14 @@ data class TextRichOptions(
                         descriptionRichJSON,
                         responseType
                     )
-                descriptionRichList.ops?.let { decodedJSONValue.addAll(it) }
+                descriptionRichList?.ops?.let { decodedJSONValue.addAll(it) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
             return decodedJSONValue
         }
 
-        fun convertBase64ToRichContentString(base64Value: String = "eyJvcHMiOlt7Imluc2VydCI6IlRlc3RpbmcgdGhlIHBvaW50ICJ9LHsiYXR0cmlidXRlcyI6eyJib2xkIjp0cnVlfSwiaW5zZXJ0IjoieW91ciB0ZXN0ICJ9LHsiaW5zZXJ0Ijp7Im1lbnRpb24iOnsiaW5kZXgiOiI5IiwiZGVub3RhdGlvbkNoYXIiOiJAIiwiaWQiOiI2OGQ2NjA1ZjY3NGNlNzcwNmI4YmQyODgiLCJ2YWx1ZSI6ImFtamFkMTU5In19fSx7Imluc2VydCI6IiBcbiJ9XX0="): String {
+        fun convertBase64ToRichContentString(base64Value: String ): String {
             return try {
                 val data = Base64.decode(base64Value, Base64.DEFAULT)
                 val customFieldRichJSON = String(data, StandardCharsets.UTF_8)

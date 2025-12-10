@@ -1,7 +1,6 @@
 package com.sleetworks.serenity.android.newone.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -34,7 +33,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun PinpointworksNewTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false, // Force light mode - ignore system dark mode setting
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit

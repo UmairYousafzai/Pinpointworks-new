@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.data.datasource.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.sleetworks.serenity.android.newone.data.datasource.local.converters.CustomFieldConverters
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.PointConverters
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.ShareConverters
 import com.sleetworks.serenity.android.newone.data.datasource.local.converters.SiteConverters
@@ -22,6 +23,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SyncDeta
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.WorkspaceDao
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
@@ -47,6 +49,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
         PointTagEntity::class,
         PointCustomFieldEntity::class,
         CommentEntity::class,
+        OfflineModifiedPointFields::class,
     ],
     version = 1
 )
@@ -55,7 +58,8 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
     WorkspaceConverters::class,
     SiteConverters::class,
     PointConverters::class,
-    ShareConverters::class
+    ShareConverters::class,
+    CustomFieldConverters::class
 )
 abstract class PinpointDatabase : RoomDatabase() {
     //    abstract fun mainDaa(): MainDao

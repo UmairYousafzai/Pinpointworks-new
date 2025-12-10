@@ -337,7 +337,7 @@ class PointViewModel @Inject constructor(
                     }
 
                     users.data.entity?.let {
-                        userRepository.insertUsers(it.map { item -> item.toEntity() })
+                        userRepository.insertUsers(it.map { item -> item.toEntity(workspaceID.value?:"") })
                     }
                     updateSyncTime()
 

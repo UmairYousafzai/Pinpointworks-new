@@ -1,11 +1,13 @@
 package com.sleetworks.serenity.android.newone.data.datasource.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.InsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
+import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
@@ -15,32 +17,33 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PointDao {
 
-    @Upsert
-    suspend fun insertPoint(share: PointEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPoint(point: PointEntity)
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPoints(points: List<PointEntity>)
 
-    @Upsert
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertModifiedField(field: OfflineModifiedPointFields)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPointTags(sites: List<PointTagEntity>)
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPointAssignees(sites: List<PointAssigneeEntity>)
 
-    @Upsert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPointCustomFields(customFields: List<PointCustomFieldEntity>)
 
     @Transaction
     suspend fun upsertPointWithChildren(
-        point: PointEntity,
-        assignees: List<PointAssigneeEntity>,
-        tags: List<PointTagEntity>,
-        customFields: List<PointCustomFieldEntity>
+        insertPoint: InsertPoint
     ) {
-        insertPoint(point)                 // parent first
-        if (assignees.isNotEmpty()) insertPointAssignees(assignees)
-        if (tags.isNotEmpty()) insertPointTags(tags)
-        if (customFields.isNotEmpty()) insertPointCustomFields(customFields)
+        insertPoint(insertPoint.point)                 // parent first
+        if (insertPoint.assignees.isNotEmpty()) insertPointAssignees(insertPoint.assignees)
+        if (insertPoint.tags.isNotEmpty()) insertPointTags(insertPoint.tags)
+        if (insertPoint.customFields.isNotEmpty()) insertPointCustomFields(insertPoint.customFields)
     }
 
     @Transaction
@@ -60,22 +63,32 @@ interface PointDao {
     @Query("SELECT * FROM point WHERE id = :pointID")
     suspend fun getPointById(pointID: String): PointEntity?
 
+    @Transaction
     @Query("SELECT * FROM point WHERE id = :pointID")
-    suspend fun getPointByIdFlow(pointID: String): Flow<PointWithRelations>
+    fun getPointByIdFlow(pointID: String): Flow<PointWithRelations>
 
     @Query("SELECT * FROM point WHERE local_id = :localID")
     suspend fun getPointByLocalId(localID: String): PointEntity?
 
     @Transaction
-    @Query("SELECT * FROM point WHERE workspace_id = :workspaceID")
+    @Query("SELECT * FROM point WHERE workspace_id = :workspaceID ORDER BY updatedAt DESC")
     fun getPointByWorkspaceId(workspaceID: String): Flow<List<PointWithRelations>>
 
     @Query("SELECT * FROM point")
     suspend fun getAllPoints(): List<PointEntity?>
+
+    @Query("SELECT * FROM offline_modified_point_fields WHERE pointId = :pointID")
+    suspend fun getAllOfflineModifiedFields(pointID: String): List<OfflineModifiedPointFields?>
+
+    @Query("SELECT * FROM offline_modified_point_fields WHERE pointId = :pointID")
+    fun getAllOfflineModifiedFieldsFlow(pointID: String): Flow<List<OfflineModifiedPointFields>>
 
     @Query("DELETE FROM point WHERE id IN (:pointIds)")
     suspend fun deletePointsByIds(pointIds: List<String>): Int
 
     @Query("DELETE FROM point WHERE workspace_id IN (:workspaceID)")
     suspend fun deletePointsByWorkspaceId(workspaceID: String): Int
+
+    @Query("DELETE FROM offline_modified_point_fields WHERE pointId IN (:pointId)")
+    suspend fun deleteModifiedFieldByPointId(pointId: String): Int
 }

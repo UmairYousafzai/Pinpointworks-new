@@ -1,7 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.models.remote.response.point
 
 import com.google.gson.annotations.SerializedName
-import com.sleetworks.serenity.android.newone.data.models.remote.response.BaseResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 import java.io.Serializable
@@ -27,4 +27,6 @@ data class Point(
     val workspaceRef: WorkspaceRef,
     val edited: Boolean,
     val tags: ArrayList<String>?,
-) : Serializable, BaseResponse()
+    var header: Header?
+
+) : Serializable

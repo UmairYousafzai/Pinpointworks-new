@@ -1,13 +1,22 @@
 package com.sleetworks.serenity.android.newone.data.models.local.entities.customField
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.CustomFieldTemplate
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListItem
 
-@Entity("custom_field_Template")
+@Entity("custom_field_template",
+    indices = [
+        Index(
+            value = ["id"],
+            unique = true
+        )
+    ])
 data class CustomFieldTemplateEntity(
 
-    @PrimaryKey val id: Long,
+    @PrimaryKey (autoGenerate = true)
+    val localId: Long? =null,
+    val id: Long,
     val workspaceID: String,
     val parentId: Long?,                 // null for root
     val label: String,
@@ -26,5 +35,10 @@ data class CustomFieldTemplateEntity(
     val unit: String? = null,
     val display: Boolean? = null,
     val lockedValue: Boolean? = null,
-    val maxListIndex: Int? = null
-)
+    val lockedTemplate: Boolean? = null,
+    val volyIntegrationActive: Boolean? = null,
+    val subValuesActive: Boolean? = null,
+    val maxListIndex: Int? = null,
+    val subList: List<SubListItem>? = null,
+    val saveAt:Long? = null
+    )

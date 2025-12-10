@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,6 +36,8 @@ class MainActivity : ComponentActivity() {
     private val sharedViewModel: SharedViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+
         installSplashScreen().setKeepOnScreenCondition {
 
             dataStoreViewModel.isLoggedIn.value != null
@@ -50,7 +53,6 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = dataStoreViewModel.isLoggedIn.collectAsState()
                 val isFirstSync = dataStoreViewModel.isLoggedIn.collectAsState()
                 if (isLoggedIn.value != null && isFirstSync.value != null) {
-                    // Capture the initial login state only once
                     val initialLoginState = remember { isLoggedIn.value == true }
                     val initialSyncState = remember { isFirstSync.value == true }
                     PinpointApp(sharedViewModel,   initialLoginState,initialSyncState)

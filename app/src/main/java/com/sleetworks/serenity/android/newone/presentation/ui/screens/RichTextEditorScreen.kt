@@ -1,10 +1,13 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.screens
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,11 +44,16 @@ fun RichTextEditorScreen(
     val state = rememberWebViewState("")
     val navigator = rememberWebViewNavigator()
     val fieldType by viewModel.fieldType.collectAsState()
+    val customFieldId by viewModel.customFieldId.collectAsState()
+    val customFieldTempId by viewModel.customFieldTempId.collectAsState()
+    BackHandler {
 
+        navController.popBackStack()
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()              // ← pushes up when keyboard shows
+            .imePadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -57,8 +65,11 @@ fun RichTextEditorScreen(
             ) { action ->
                 when (action) {
                     "Done" -> {
-                        // Call the JavaScript function to save the value
                         webView?.evaluateJavascript("onSaveValue();", null)
+                    }
+
+                    "Back" -> {
+                        navController.popBackStack()
                     }
                 }
             }
@@ -73,11 +84,14 @@ fun RichTextEditorScreen(
                 },
                 onSave = { plainText, base64Value, mentions ->
 
+
                     with(navController.previousBackStackEntry?.savedStateHandle) {
                         this?.set("plainText", plainText)
                         this?.set("base64Value", base64Value)
                         this?.set("mentions", mentions)
                         this?.set("fieldType", fieldType)
+                        this?.set("customFieldId", customFieldId)
+                        this?.set("customFieldTempId", customFieldId)
                     }
                     navController.popBackStack()
                 }
@@ -99,6 +113,7 @@ fun QuillRichTextEditor(
 ) {
     val fileUrl by viewModel.fileUrl.collectAsState()
     val workspaceID by viewModel.workspaceID.collectAsState()
+    val mainHandler = Handler(Looper.getMainLooper())
 
     // Generate HTML once when inputs change, not every recomposition
     LaunchedEffect(workspaceID) {
@@ -144,17 +159,20 @@ fun QuillRichTextEditor(
                 @JavascriptInterface
                 fun getValue(plainText: String, base64Value: String, mentions: String) {
                     Log.e("addJavascriptInterface", "getValue: $plainText")
+
                     val list = mentions
                         .split(",")
                         .map { it.trim() }
                         .filter { it.isNotEmpty() }
 
-                    // Call the onSave callback with the final values
-                    onSave(plainText, base64Value, list)
+
+                    mainHandler.post {
+                        onSave(plainText, base64Value, list)
+
+                    }
                 }
             }, "Android")
 
-            // Store the WebView reference for external access
             onWebViewCreated(web)
         }
     )

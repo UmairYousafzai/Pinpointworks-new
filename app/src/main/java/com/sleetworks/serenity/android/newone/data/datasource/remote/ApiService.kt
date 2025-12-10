@@ -7,9 +7,11 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.U
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.updatedPoint.UpdatedPoint
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -18,6 +20,7 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -75,7 +78,11 @@ interface ApiService {
         @Query("workspaceId") workspaceId: String
     ): Response<ApiResponse<PointResponse>>
 
-
+    @PUT("v1/points/{id}/simple-update?forceCorrectFieldsUpdate=true")
+    suspend fun updatePointFields(
+        @Path("id") pointId: String,
+        @Body params: RequestBody
+    ): Response<ApiResponse<UpdatedPoint>>
     //////////// Images //////////////
 
     @GET("v1/images/{imageId}/file/size/square/200")
@@ -91,7 +98,7 @@ interface ApiService {
     ): Response<ApiResponse<Comment>>
 
 
-    @GET("comments/points/{id}")
+    @GET("v1/comments/points/{id}")
     suspend fun getCommentPoint(@Path("id") pointId: String): Response<ApiResponse<List<Comment>>>
 
 
@@ -183,11 +190,7 @@ interface ApiService {
 //    @GET("images/itemref/{id}")
 //    fun getImageListForPoint(@Path("id") pointId: String): Call<ApiResponse<List<Image>>>
 //
-//    @PUT("points/{id}/simple-update?forceCorrectFieldsUpdate=true")
-//    fun updatePointFields(
-//        @Path("id") pointId: String,
-//        @Body params: RequestBody
-//    ): Call<ApiResponse<UpdatedPoint>>
+
 //
 //    @PUT("points/{id}/simple-update?forceCorrectFieldsUpdate=true")
 //    fun updatePointCustomField(

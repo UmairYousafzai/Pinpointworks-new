@@ -19,6 +19,10 @@ class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao) : UserRep
         return userDao.getUserById(userId)
     }
 
+    override suspend fun getUserByWorkspaceId(workspaceId: String): List<AssigneeEntity> {
+        return userDao.getUserByWorkspaceId(workspaceId)
+    }
+
     override suspend fun getAllUsers(): List<AssigneeEntity> {
         return userDao.getAllUsers()
     }

@@ -17,6 +17,9 @@ interface AssigneeDao {
     @Query("SELECT * FROM assignee WHERE id = :userId")
     suspend fun getUserById(userId: String): AssigneeEntity?
 
+    @Query("SELECT * FROM assignee WHERE workspace_id = :workspaceID")
+    suspend fun getUserByWorkspaceId(workspaceID: String): List<AssigneeEntity>
+
     @Query("SELECT * FROM assignee")
     suspend fun getAllUsers(): List<AssigneeEntity>
 }

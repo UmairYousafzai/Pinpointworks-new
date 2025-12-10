@@ -1,9 +1,9 @@
 package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
-import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.mappers.toInsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
+import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
@@ -14,7 +14,7 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
     PointRepository {
 
     override suspend fun insertPoint(point: Point) {
-        pointDao.insertPoint(point.toEntity())
+        pointDao.upsertPointWithChildren(point.toInsertPoint())
     }
 
     override suspend fun insertPoints(points: List<Point>) {
@@ -24,6 +24,10 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
         }
         pointDao.upsertPointsWithChildren(insertPoints);
 
+    }
+
+    override suspend fun insertModifiedField(field: OfflineModifiedPointFields) {
+        pointDao.insertModifiedField(field)
     }
 
     override suspend fun getPointByID(pointID: String): PointEntity? {
@@ -46,12 +50,26 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
         return pointDao.getAllPoints()
     }
 
+    override suspend fun getAllModifiedFields(pointID: String): List<OfflineModifiedPointFields?> {
+        return pointDao.getAllOfflineModifiedFields(pointID)
+    }
+
+    override suspend fun getAllModifiedFieldsFlow(pointID: String): Flow<List<OfflineModifiedPointFields>> {
+        return pointDao.getAllOfflineModifiedFieldsFlow(pointID)
+    }
+
     override suspend fun deletePointByID(pointIDs: List<String>): Int {
         return pointDao.deletePointsByIds(pointIDs)
     }
 
     override suspend fun deletePointByWorkspaceID(workspaceID: String): Int {
         return pointDao.deletePointsByWorkspaceId(workspaceID)
+    }
+
+    override suspend fun deleteModifiedFieldByPointId(pointId: String): Int {
+
+        return pointDao.deleteModifiedFieldByPointId(pointId)
+
     }
 
 }

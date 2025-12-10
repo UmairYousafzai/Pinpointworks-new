@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.PinpointworksNew" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.PinpointworksNew" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
 
     <!-- Your main application theme -->
     <style name="Theme.YourAppName" parent="android:Theme.Material.Light.NoActionBar">
@@ -10,6 +12,7 @@
 
     <!-- Splash Screen Theme -->
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="android:forceDarkAllowed">false</item>
 
         <!-- Set the splash screen background, animated icon, and animation duration. -->
         <item name="windowSplashScreenBackground">@color/Onyx</item>

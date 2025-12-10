@@ -58,6 +58,8 @@ fun AppTopBar(
                     if (shouldDrawerIntegrate) {
                         scope?.launch { drawerState?.open() }
 
+                    }else{
+                        actionClick("Back")
                     }
                 },
             ) {

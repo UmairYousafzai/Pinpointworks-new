@@ -20,7 +20,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
         onUpdate = ForeignKey.CASCADE
     )],
 
-    indices = [Index(value = ["workspace_id", "point_id"])]
+    indices = [Index(value = [ "point_id"])]
 
 )
 data class CommentEntity(

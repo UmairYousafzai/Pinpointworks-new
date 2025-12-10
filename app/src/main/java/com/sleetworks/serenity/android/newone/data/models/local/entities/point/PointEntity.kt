@@ -5,8 +5,6 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
-import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Document
@@ -28,9 +26,11 @@ data class PointEntity(
 //    val customFieldSimplyList: ArrayList<PointCustomFieldEntity>,
     val description: String,
     val descriptionRich: String,
+//    @ColumnInfo(name = "created_by")
     val createdBy: String,
     val documents: ArrayList<Document>,
     val flagged: Boolean,
+//    @Embedded
     val header: Header?,
     val images: ArrayList<Image>,
     val images360: ArrayList<Images360>,
@@ -46,5 +46,6 @@ data class PointEntity(
     val workspaceRef: WorkspaceRef,
     val isModified: Boolean,
     val edited: Boolean,
+    val updatedAt:Long
 
     )

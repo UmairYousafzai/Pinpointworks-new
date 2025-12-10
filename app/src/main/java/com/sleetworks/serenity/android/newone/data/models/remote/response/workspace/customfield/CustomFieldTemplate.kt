@@ -18,6 +18,9 @@ data class CustomFieldTemplate(
     val unit: String? = null,
     val display: Boolean? = null,
     val lockedValue: Boolean? = null,
-    val subList: List<CustomFieldTemplate>? = null,
+    val lockedTemplate: Boolean? = null,
+    val volyIntegrationActive: Boolean? = null,
+    val subValuesActive: Boolean? = null,
+    val subList: List<SubListItem>? = null,
     val maxListIndex: Int? = null
 )
