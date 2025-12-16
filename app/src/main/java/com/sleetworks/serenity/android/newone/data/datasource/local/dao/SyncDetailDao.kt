@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SyncDetailEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SyncDetailDao {
@@ -16,6 +17,8 @@ interface SyncDetailDao {
 
     @Query("SELECT * FROM syn_detail WHERE workspace_id = :workspaceID AND data_type = :type")
     fun getSynDetailByWorkspaceId(workspaceID: String, type: String): SyncDetailEntity?
+    @Query("SELECT * FROM syn_detail WHERE workspace_id = :workspaceID AND data_type = :type")
+    fun getSynDetailByWorkspaceIdFlow(workspaceID: String, type: String): Flow<SyncDetailEntity?>
 
 
     @Query("DELETE FROM point WHERE workspace_id IN (:workspaceID)")

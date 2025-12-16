@@ -4,10 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
-import com.sleetworks.serenity.android.newone.utils.WORKSPACE_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,6 +30,9 @@ class SharedViewModel @Inject constructor(
         viewModelScope.launch {
             Log.d(TAG, "showSnackbar: ")
             _snackbarChannel.send(message)
+            delay(1000)
+            _snackbarChannel.send("")
+
         }
     }
 }

@@ -16,7 +16,7 @@ data class  PointCustomField(
     val decimalPlaces: Int? = null,
     val showCommas: Boolean? = null,
     val showHoursOnly: Boolean? = null,
-    val idOfChosenElement: String? = null,
+    var idOfChosenElement: String? = null,
     val selectedItemIds: List<String>? = null,
     val subValues: List<SubListOfTotal>? = null
 ) : Serializable

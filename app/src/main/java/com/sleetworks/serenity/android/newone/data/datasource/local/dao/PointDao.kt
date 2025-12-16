@@ -72,7 +72,11 @@ interface PointDao {
 
     @Transaction
     @Query("SELECT * FROM point WHERE workspace_id = :workspaceID ORDER BY updatedAt DESC")
-    fun getPointByWorkspaceId(workspaceID: String): Flow<List<PointWithRelations>>
+    fun getPointByWorkspaceIdFlow(workspaceID: String): Flow<List<PointWithRelations>>
+
+    @Transaction
+    @Query("SELECT * FROM point WHERE workspace_id = :workspaceID ORDER BY updatedAt DESC")
+    fun getPointByWorkspaceId(workspaceID: String): List<PointWithRelations>
 
     @Query("SELECT * FROM point")
     suspend fun getAllPoints(): List<PointEntity?>

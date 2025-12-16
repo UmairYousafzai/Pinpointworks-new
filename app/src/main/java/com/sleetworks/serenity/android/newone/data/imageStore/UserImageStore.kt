@@ -2,8 +2,16 @@ package com.sleetworks.serenity.android.newone.data.imageStore
 
 
 import android.content.Context
+import android.util.Base64
 import com.sleetworks.serenity.android.newone.data.storage.ExternalStorageUtils
+import com.sleetworks.serenity.android.newone.data.storage.InternalWorkspaceStorageUtils
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
 
@@ -58,5 +66,98 @@ class UserImageStore @Inject constructor(private val context: Context) {
      */
     fun deleteOrphanedAvatars(usedImageIds: Set<String>) {
         ExternalStorageUtils().deleteAllWithExclusions("avatar", usedImageIds, context)
+    }
+
+    fun checkImage(
+        workspaceId: String,
+        subdirectory: String,
+        imageId: String,
+    ): File {
+        return InternalWorkspaceStorageUtils().getFileReference(
+            workspaceId, subdirectory,
+            "$imageId.png",
+            context
+        )
+    }
+
+    fun saveImage(imageId: String, imageData: String, workspaceId: String) {
+        /**
+         * decode from string to byte array
+         */
+
+        val imgBytesData = Base64.decode(
+            imageData,
+            Base64.DEFAULT
+        )
+
+        val file = InternalWorkspaceStorageUtils().getFileReference(
+            workspaceId,
+            "$workspaceId/images/thumb/",
+            "$imageId.png",
+            context
+        )
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+
+        var fileOutputStream: FileOutputStream? = null
+        try {
+            fileOutputStream = FileOutputStream(file)
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
+        }
+
+        val bufferedOutputStream = BufferedOutputStream(
+            fileOutputStream
+        )
+        try {
+            bufferedOutputStream.write(imgBytesData)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } finally {
+            try {
+                bufferedOutputStream.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun saveLargeImage(
+        imageID: String, byteStream: InputStream, workspaceId: String,
+        subdirectory: String,
+    ) {
+        val file = checkImage(workspaceId,subdirectory,imageID)
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+
+        }
+
+        try {
+            val outputStream: OutputStream =
+                BufferedOutputStream(FileOutputStream(file.absolutePath))
+
+            var inputStream: BufferedInputStream? = null
+                inputStream = BufferedInputStream(byteStream)
+
+            var b: Int
+            while ((inputStream.read().also { b = it }) != -1) {
+                outputStream.write(b)
+            }
+            outputStream.flush()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
     }
 }

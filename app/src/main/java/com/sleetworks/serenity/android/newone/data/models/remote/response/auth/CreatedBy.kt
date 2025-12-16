@@ -5,5 +5,7 @@ import java.io.Serializable
 data class CreatedBy(
     val caption: String,
     val id: String,
-    val type: String
+    val type: String,
+    val primaryImageId: String,
+
 ): Serializable

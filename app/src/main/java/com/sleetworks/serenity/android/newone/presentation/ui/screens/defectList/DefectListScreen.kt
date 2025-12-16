@@ -53,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
+import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
 import com.sleetworks.serenity.android.newone.presentation.ui.components.AppTopBar
 import com.sleetworks.serenity.android.newone.presentation.ui.components.MultiSegmentAppBarLoader
@@ -83,6 +84,7 @@ fun DefectListScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val error by pointViewModel.error.collectAsState()
+    val uiEvent = pointViewModel.uiEvent
 
 
     BackHandler {
@@ -93,6 +95,22 @@ fun DefectListScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        uiEvent.collect { event ->
+            when (event) {
+                is UIEvent.Navigate -> {
+
+                }
+
+                is UIEvent.PopBackStack -> navController.popBackStack()
+                UIEvent.Logout -> {
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
 
     LaunchedEffect(error) {
 
@@ -156,7 +174,7 @@ fun MainContent(
                             color = DarkCharcoal
                         )
                         .padding(vertical = 4.dp, horizontal = 16.dp),
-                    text = "Last Synced: $syncTime ",
+                    text = "Last Synced: ${syncTime} ",
                     color = Color.White,
                     fontSize = 14.sp
                 )
@@ -326,7 +344,8 @@ fun DefectListItem(point: PointDomain?, onClick: () -> Unit) {
             Text(
                 text = point?.sequenceNumber.toString(),
                 color = Color.Black,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                modifier = Modifier.fillMaxWidth(0.1f)
             )
             Spacer(modifier = Modifier.width(10.dp))
 
@@ -346,6 +365,7 @@ fun DefectListItem(point: PointDomain?, onClick: () -> Unit) {
                 )
             }
             Text(
+                modifier = Modifier.padding(horizontal = 8.dp),
                 text = point?.title ?: "",
                 color = Color.Black,
                 fontSize = 16.sp,

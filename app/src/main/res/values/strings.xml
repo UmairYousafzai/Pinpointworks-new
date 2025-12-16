@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Pinpointworks new</string>
+    <string name="sync_failed_message">Unfortunately a problem occurred and the sync could not be completed. Please check your network connection and try again.</string>
+
 </resources>

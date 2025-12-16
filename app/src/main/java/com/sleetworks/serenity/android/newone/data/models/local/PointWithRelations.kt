@@ -36,5 +36,5 @@ data class PointWithRelations(
         entityColumn = "point_id",
         entity = CommentEntity::class
     )
-    val comments: List<CommentEntity>,
+    val comments: List<CommentWithReactions>,
 )

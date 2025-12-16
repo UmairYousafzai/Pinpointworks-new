@@ -17,7 +17,9 @@ object DefectFieldType {
     const val IMAGES = "images"
     const val DELETED_IMAGES = "deletedImages"
     const val DELETED_VIDEOS = "deletedVideos"
+    const val VIDEOS = "videos"
     const val ANNOTATED_IMAGES = "annotatedImages"
     const val COMMENT = "comment"
+    const val REACTION = "reaction"
     const val MENTIONS = "mentions"
 }

@@ -10,6 +10,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAss
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointTagDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ReactionDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
@@ -71,5 +72,8 @@ object AppModule {
 
     @Provides
     fun provideCommentDao(db: PinpointDatabase): CommentDao = db.commentDao()
+
+    @Provides
+    fun provideReactionDao(db: PinpointDatabase): ReactionDao = db.reactionDao()
 
 }

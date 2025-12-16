@@ -30,9 +30,11 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepo
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.usecase.SyncImageUseCase
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.UserUiModel
@@ -43,7 +45,10 @@ import com.sleetworks.serenity.android.newone.utils.SITE_ID
 import com.sleetworks.serenity.android.newone.utils.WORKSPACE_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,7 +60,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.BufferedInputStream
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -71,12 +80,15 @@ class PointViewModel @Inject constructor(
     val userRemoteRepository: UserRemoteRepository,
     val userRepository: UserRepository,
     val userImageStore: UserImageStore,
+    val imageRepository: ImageRemoteRepository,
     val dataStoreRepository: DataStoreRepository,
-    val savedStateHandle: SavedStateHandle
+    private val syncImagesUseCase: SyncImageUseCase,
+    val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val TAG = "PointViewModel"
-
+    private var syncImagesJob: Job? = null
+    private var usersAvatarSync: Job? = null
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
     private val _loader: MutableStateFlow<Pair<String, Boolean>> = MutableStateFlow(Pair("", false))
@@ -128,7 +140,7 @@ class PointViewModel @Inject constructor(
     private val _points: StateFlow<List<PointDomain>> =
         _workspaceID.filter { it?.isEmpty() == false }
             .flatMapLatest { workspaceID ->
-                pointRepository.getPointByWorkspaceID(
+                pointRepository.getPointByWorkspaceIDFlow(
                     workspaceID ?: ""
                 )
             }
@@ -164,6 +176,7 @@ class PointViewModel @Inject constructor(
 
     private val _user = dataStoreRepository.user.filterNotNull().map { user ->
         UserUiModel(
+            user.id,
             user.username,
             user.isLogin,
             user.email,
@@ -183,7 +196,25 @@ class PointViewModel @Inject constructor(
     val imageFile
         get() = _imageFile
 
-    private val _syncTime = dataStoreRepository.syncTime
+    private val _syncTime: StateFlow<String> =
+        _workspaceID.filter { it?.isEmpty() == false }
+            .flatMapLatest { workspaceID ->
+                syncDetailRepository.getSyncDetailByWorkspaceIDFlow(
+                    workspaceID ?: "",
+                    SyncType.POINT.name
+                )
+            }
+            .map { syncDetail ->
+                if (syncDetail != null && syncDetail?.time != 0L) {
+                    val sdf = SimpleDateFormat("MMM/dd/yyyy, HH:mm", Locale.getDefault())
+                    sdf.format(Date(syncDetail.time))
+                } else ""
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = ""
+            )
     val syncTime
         get() = _syncTime
 
@@ -200,11 +231,17 @@ class PointViewModel @Inject constructor(
             val shouldSyncPoint = savedStateHandle.get<Boolean>("shouldSyncPoint") ?: false
             if (shouldSyncPoint) {
                 getPoints()
+            } else {
+                syncImages()
+                downloadUsersAvatar()
             }
-
         }, 500)
 
+    }
 
+    fun cancelImageSync() {
+        syncImagesJob?.cancel()
+        usersAvatarSync?.cancel()
     }
 
     fun getPoints() {
@@ -224,6 +261,8 @@ class PointViewModel @Inject constructor(
                         pointRepository.insertPoints(it.points)
                     }
                     updatePointSyncTime(System.currentTimeMillis())
+                    syncImages()
+                    downloadUsersAvatar()
                 }
 
                 is Resource.Error -> {
@@ -290,7 +329,7 @@ class PointViewModel @Inject constructor(
                 _loader.emit(Pair("Fetching workspace users.....", true))
                 val users = workspaceUsersDeferred.await()
 
-
+                delay(4000)
                 if (user is Resource.Success &&
                     sites is Resource.Success &&
                     workspaces is Resource.Success &&
@@ -337,7 +376,11 @@ class PointViewModel @Inject constructor(
                     }
 
                     users.data.entity?.let {
-                        userRepository.insertUsers(it.map { item -> item.toEntity(workspaceID.value?:"") })
+                        userRepository.insertUsers(it.map { item ->
+                            item.toEntity(
+                                workspaceID.value ?: ""
+                            )
+                        })
                     }
                     updateSyncTime()
 
@@ -347,6 +390,8 @@ class PointViewModel @Inject constructor(
                     _loader.emit(Pair("", false))
 
                     val error = when {
+                        user is Resource.Error -> user.apiException
+                        users is Resource.Error -> users.apiException
                         sites is Resource.Error -> sites.apiException
                         workspaces is Resource.Error -> workspaces.apiException
                         shares is Resource.Error -> shares.apiException
@@ -358,6 +403,8 @@ class PointViewModel @Inject constructor(
 
                     if (error is ApiException.NetworkException) {
                         _error.emit(error.message ?: "Unexpected error")
+                    } else if (error is ApiException.UnauthorizedException) {
+
                     } else {
                         _error.emit("Sync failed,Unexpected error")
                     }
@@ -510,6 +557,181 @@ class PointViewModel @Inject constructor(
             else -> list.filter { defect -> defectTags.any { defect?.tags?.contains(it) == true } }
         }
         return filteredList
+    }
+
+    fun logout() {
+        viewModelScope.launch(Dispatchers.IO) {
+//            _loader.emit(Pair("Logging out.....", true))
+            try {
+                userRepository.clearDb()
+                dataStoreRepository.clearData()
+                _uiEvent.emit(UIEvent.Logout)
+            } catch (e: Exception) {
+
+            }
+//            _loader.emit(Pair("Logging out.....", false))
+
+        }
+
+    }
+
+    fun syncImages() {
+        syncImagesJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val workspaceId = workspaceID.value ?: return@launch
+
+                syncImagesUseCase(workspaceId, _loader)
+
+            } catch (e: Exception) {
+                // Handle cancellation or other errors
+                Log.e(TAG, "syncImages job failed or was cancelled", e)
+            } finally {
+                // Ensure the loader is always turned off
+                _loader.emit(Pair("", false))
+            }
+        }
+    }
+
+//    suspend fun downloadThumbnails(points: List<PointDomain>) {
+//
+//        coroutineScope {
+//            var completed = 0
+//            val total = points.size
+//            val workspaceId = workspaceID.value
+//
+//            points.chunkedBy(10).forEach { chunk ->
+//
+//                chunk.map { point ->
+//
+//                    async(Dispatchers.IO) {
+//                        _loader.value = Pair("Syncing thumbnails - ${point.title}", true)
+//                        val result = imageRepository.getImagesForPoint(point.id)
+//
+//                        when (result) {
+//                            is Resource.Error -> {
+//                                Log.e(TAG, "downloadThumbnails: ", result.apiException)
+//                            }
+//
+//                            Resource.Loading -> {
+//
+//                            }
+//
+//                            is Resource.Success<ApiResponse<Map<String, String>>> -> {
+//                                result.data.entity?.forEach { entry ->
+//
+//                                    userImageStore.saveImage(entry.key, entry.value, workspaceId!!)
+//                                }
+//                            }
+//                        }
+//                        synchronized(this) {
+//                            completed++
+//                        }
+//                    }
+//
+//                }.awaitAll()
+//
+//
+//                _loader.value = Pair("", false)
+//
+//
+//            }
+//        }
+//
+//    }
+//
+//    suspend fun downloadImages(imagePairs: List<Pair<String, String>>) {
+//
+//
+//        coroutineScope {
+//            var completed = 0
+//            val total = imagePairs.size
+//            val workspaceId = workspaceID.value
+//
+//            imagePairs.chunkedBy(10).forEach { chunk ->
+//
+//                chunk.map { image ->
+//
+//                    async(Dispatchers.IO) {
+//                        _loader.value = Pair("Syncing thumbnails - ${image.first}", true)
+//                        val result = imageRepository.getLargeImage(image.second)
+//
+//                        when (result) {
+//                            is Resource.Error -> {
+//                                Log.e(TAG, "downloadThumbnails: ", result.apiException)
+//                            }
+//
+//                            Resource.Loading -> {
+//
+//                            }
+//
+//                            is Resource.Success<ResponseBody> -> {
+//
+//                                userImageStore.saveLargeImage(
+//                                    image.second,
+//                                    result.data.byteStream(),
+//                                    workspaceId!!,
+//                                    "$workspaceId/images/original/"
+//                                )
+//                            }
+//                        }
+//                        synchronized(this) {
+//                            completed++
+//                        }
+//                    }
+//
+//                }.awaitAll()
+//
+//
+//                _loader.value = Pair("", false)
+//
+//
+//            }
+//        }
+//    }
+
+
+    fun downloadUsersAvatar() {
+
+        usersAvatarSync = viewModelScope.launch(Dispatchers.IO) {
+            val assignees = userRepository.getUserByWorkspaceId(_workspaceID.value ?: "")
+            val users = assignees.filter {
+                userImageStore.getAvatarFile(it.primaryImageId) == null
+
+            }
+
+            users.map { assignee ->
+
+                async {
+                    val result = imageRepository.downloadImageThumbFile(assignee.primaryImageId)
+                    when (result) {
+                        is Resource.Success -> {
+                            try {
+                                val outputStream =
+                                    userImageStore.getAvatarOutputStream(assignee.primaryImageId)
+                                val inputStream = BufferedInputStream(result.data.byteStream())
+                                var b: Int
+                                while ((inputStream.read().also { b = it }) != -1) {
+                                    outputStream.write(b)
+                                }
+                                outputStream.flush()
+                            } catch (e: Exception) {
+                                Log.e(TAG, "downloadUserAvatar: ", e)
+                            }
+                        }
+
+
+                        is Resource.Error -> {
+                            Log.e(TAG, "downloadUserAvatar: ", result.apiException)
+                        }
+
+                        Resource.Loading -> {}
+                    }
+                }
+
+            }.awaitAll()
+        }
+
+
     }
 
 }

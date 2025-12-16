@@ -75,6 +75,7 @@ fun PinpointApp(sharedViewModel: SharedViewModel, isLoggedIn: Boolean, initialSy
     LaunchedEffect(Unit) {
         sharedViewModel.snackbarFlow.collect { message ->
             Log.e(TAG, "PinpointApp: snackbar $message")
+            if (message.isNotEmpty())
             snackbarHostState.showSnackbar(message)
         }
     }

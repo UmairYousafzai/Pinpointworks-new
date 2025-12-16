@@ -36,4 +36,5 @@ data class CommentEntity(
     val type: String,
     @Embedded
     val workspaceRef: WorkspaceRef
+
 )

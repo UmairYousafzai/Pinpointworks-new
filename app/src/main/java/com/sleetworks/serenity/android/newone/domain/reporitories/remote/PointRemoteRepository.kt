@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.domain.reporitories.remote
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.updatedPoint.UpdatedPoint
 import com.sleetworks.serenity.android.newone.data.network.Resource
@@ -17,6 +18,12 @@ interface PointRemoteRepository {
         pointId: String,
         body: RequestBody
     ): Resource<ApiResponse<UpdatedPoint>>
+
+
+    suspend fun getPointDetail(
+        pointId: String,
+        workSpaceId: String,
+    ): Resource<ApiResponse<Point>>
 
 
 

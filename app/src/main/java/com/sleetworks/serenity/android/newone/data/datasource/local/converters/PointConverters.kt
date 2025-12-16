@@ -4,12 +4,14 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.reflect.TypeToken
+import com.sleetworks.serenity.android.newone.data.models.local.NewCustomField
 import com.sleetworks.serenity.android.newone.data.models.local.OfflineFieldValue
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.CustomFieldTemplateEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.CreatedBy
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UpdatedBy
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Document
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Images360
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Pin
@@ -17,6 +19,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.point.
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListOfTotal
+import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 
 class PointConverters {
     private val gson = Gson()
@@ -55,6 +58,14 @@ class PointConverters {
     @TypeConverter
     fun toImages360List(value: String?): ArrayList<Images360>? =
         value?.let { gson.fromJson(it, object : TypeToken<ArrayList<Images360>>() {}.type) }
+
+
+    @TypeConverter
+    fun fromLocalImageList(value: ArrayList<LocalImage>?): String? = gson.toJson(value)
+
+    @TypeConverter
+    fun toLocalImageList(value: String?): ArrayList<LocalImage>? =
+        value?.let { gson.fromJson(it, object : TypeToken<ArrayList<LocalImage>>() {}.type) }
 
 
     @TypeConverter
@@ -122,6 +133,8 @@ class PointConverters {
             is OfflineFieldValue.StringListValue -> "StringListValue"
             is OfflineFieldValue.IntValue -> "IntValue"
             is OfflineFieldValue.DoubleValue -> "DoubleValue"
+            is OfflineFieldValue.NewCustomFieldValue -> "NewCustomFieldValue"
+            is OfflineFieldValue.CommentReactionValue -> "CommentReactionValue"
         }
 
         val wrapper = mapOf(
@@ -157,6 +170,33 @@ class PointConverters {
                 }
 
                 "IntValue" -> OfflineFieldValue.IntValue(actualValue?.asInt ?: 0)
+                "CommentReactionValue" -> OfflineFieldValue.CommentReactionValue(
+                    gson.fromJson(
+                        actualValue ,
+                        Reaction::class.java
+                    )
+                )
+
+                "NewCustomFieldValue" -> {
+                    val list = if (actualValue?.isJsonArray == true) {
+                        actualValue.asJsonArray.mapNotNull {
+                            gson.fromJson(
+                                it,
+                                NewCustomField::class.java
+                            )
+                        }
+                    } else {
+                        // Fallback: try parsing as string
+                        val listJson = actualValue?.toString() ?: "[]"
+                        gson.fromJson<List<NewCustomField>>(
+                            listJson,
+                            object : TypeToken<List<NewCustomField>>() {}.type
+                        ) ?: emptyList()
+                    }
+                    OfflineFieldValue.NewCustomFieldValue(list)
+
+                }
+
                 "DoubleValue" -> OfflineFieldValue.DoubleValue(actualValue?.asDouble ?: 0.0)
                 else -> null
             }

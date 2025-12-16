@@ -29,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,11 +44,13 @@ import com.sleetworks.serenity.android.newone.BuildConfig
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.model.UserUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.WorkspaceUiModel
+import com.sleetworks.serenity.android.newone.presentation.ui.components.ConfirmationDialog
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.PointViewModel
 import com.sleetworks.serenity.android.newone.ui.theme.BrightBlue
 import com.sleetworks.serenity.android.newone.ui.theme.OuterSpace_2
 import com.sleetworks.serenity.android.newone.ui.theme.TransparentBlack
 import com.sleetworks.serenity.android.newone.ui.theme.gray
+import com.sleetworks.serenity.android.newone.utils.CONSTANTS.LOGOUT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,6 +67,8 @@ fun NavigationDrawerContent(
     val imageFile by pointViewModel.imageFile.collectAsState()
     val workspaces by pointViewModel.workspaces.collectAsState()
     val workspaceID by pointViewModel.workspaceID.collectAsState()
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var dialogType by remember { mutableStateOf(LOGOUT) }
 
     LaunchedEffect(user.imageID) {
         pointViewModel.getUserImage(user.imageID)
@@ -73,8 +80,7 @@ fun NavigationDrawerContent(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-,            horizontalAlignment = Alignment.CenterHorizontally,
+                .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
 
@@ -127,6 +133,7 @@ fun NavigationDrawerContent(
                                 workspace.id,
                                 workspace.siteRef.id
                             )
+                            pointViewModel.cancelImageSync()
                             pointViewModel.syncWorkspacesData()
 
                         }
@@ -134,16 +141,42 @@ fun NavigationDrawerContent(
                 }
             }
 
-            DrawerFooter()
+            DrawerFooter(onLogoutClick = {
+                dialogType = LOGOUT
+                showConfirmationDialog = true
+            }, onSettingsClick = {})
 
         }
+    }
+
+    if (showConfirmationDialog) {
+        ConfirmationDialog(
+            title = "Logout",
+            message = "Are you sure you want to logout?",
+            dialogType = dialogType,
+            onDismiss = {
+                showConfirmationDialog= false
+            },
+            onConfirm = {
+                showConfirmationDialog= false
+                scope.launch {
+                    drawerState.close()
+
+                }
+                pointViewModel.logout()
+
+            })
     }
 
 }
 
 @Composable
 fun DrawerHeader(user: UserUiModel, imageFile: File?) {
-    Box(modifier = Modifier.fillMaxHeight(0.15f).padding(15.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxHeight(0.15f)
+            .padding(15.dp)
+    ) {
         CircularImage(user.username, imageFile)
     }
     Text(
@@ -159,12 +192,24 @@ fun DrawerHeader(user: UserUiModel, imageFile: File?) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DrawerFooter() {
-    Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(1.5f).background(color = gray), contentAlignment = Alignment.Center) {
+fun DrawerFooter(onLogoutClick: () -> Unit = {}, onSettingsClick: () -> Unit = {}) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(1f)
+            .background(color = gray),
+        contentAlignment = Alignment.Center
+    ) {
         Column {
             Spacer(modifier = Modifier.height(15.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.clickable {
+                    onSettingsClick()
+                },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_setting),
                     contentDescription = "Settings",
@@ -178,11 +223,17 @@ fun DrawerFooter() {
             }
             Spacer(modifier = Modifier.height(15.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.clickable {
+                    onLogoutClick()
+                },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_sign_out),
                     contentDescription = "Logout",
-                            tint = null
+                    tint = null
 
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -192,7 +243,10 @@ fun DrawerFooter() {
             }
             Spacer(modifier = Modifier.height(15.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logo),
                     contentDescription = "Logo",
@@ -223,7 +277,10 @@ fun DrawerContentItem(
     val grouped = workspaces.groupBy { it?.accountRef?.id }
 
     LazyColumn(
-        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f).padding(15.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.75f)
+            .padding(15.dp),
         horizontalAlignment = Alignment.Start
     ) {
 

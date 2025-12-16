@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
+import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointDatabase
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.AssigneeDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CommentDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CustomFieldTemplateDao
@@ -8,6 +9,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAss
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointTagDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ReactionDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
@@ -21,6 +23,7 @@ import com.sleetworks.serenity.android.newone.data.repositories.local.PointAssig
 import com.sleetworks.serenity.android.newone.data.repositories.local.PointCustomFieldRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.PointRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.PointTagRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.local.ReactionLocalRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.ShareRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.SiteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.local.SyncDetailRepositoryImpl
@@ -41,6 +44,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointAss
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointCustomFieldRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointTagRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.ReactionLocalRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SyncDetailRepository
@@ -121,19 +125,19 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideDataStoreRepository(@ApplicationContext context: Context): DataStoreRepository {
-        return DataStoreRepositoryImpl(context);
+        return DataStoreRepositoryImpl(context)
     }
 
     @Provides
     @Singleton
     fun provideFirebaseRepository(dataStoreRepository: DataStoreRepository): FirebaseRepository {
-        return FirebaseRepositoryImpl(dataStoreRepository);
+        return FirebaseRepositoryImpl(dataStoreRepository)
     }
 
     @Provides
     @Singleton
-    fun provideUserRepository(assigneeDao: AssigneeDao): UserRepository {
-        return UserRepositoryImpl(assigneeDao);
+    fun provideUserRepository(assigneeDao: AssigneeDao,database: PinpointDatabase): UserRepository {
+        return UserRepositoryImpl(assigneeDao,database)
     }
 
     @Provides
@@ -197,6 +201,12 @@ object RepositoryModule {
     @Singleton
     fun providePointCommentRepository(commentDao: CommentDao): CommentLocalRepository {
         return CommentLocalRepositoryImpl(commentDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReactionRepository(reactionDao: ReactionDao): ReactionLocalRepository {
+        return ReactionLocalRepositoryImpl(reactionDao)
     }
 
 }

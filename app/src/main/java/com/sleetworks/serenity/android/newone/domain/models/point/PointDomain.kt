@@ -2,8 +2,6 @@ package com.sleetworks.serenity.android.newone.domain.models.point
 
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
-import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
-import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Document
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Images360
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Pin
@@ -11,6 +9,8 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.point.
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Polygon
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
+import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
+import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 import java.io.Serializable
 
 data class PointDomain(
@@ -23,7 +23,7 @@ data class PointDomain(
     var descriptionRich: String = "",
     var documents: ArrayList<Document> = arrayListOf(),
     var flagged: Boolean = false,
-    var images: ArrayList<Image> = arrayListOf(),
+    var images: ArrayList<LocalImage> = arrayListOf(),
     var images360: ArrayList<Images360> = arrayListOf(),
     var pins: ArrayList<Pin> = arrayListOf(),
     var polygons: ArrayList<Polygon> = arrayListOf(),
@@ -37,7 +37,7 @@ data class PointDomain(
     var tags: ArrayList<String> = arrayListOf(),
     var isModified: Boolean = false,
     var header: Header? = null,
-    var comments: ArrayList<Comment> = arrayListOf(),
+    var comments: ArrayList<CommentDomain> = arrayListOf(),
     val updatedAt:Long=0
 
 

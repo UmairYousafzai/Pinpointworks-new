@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.flow.StateFlow
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 inline fun <reified T> NavController.resultFlow(key: String, initial: T): StateFlow<T> =
@@ -114,4 +115,14 @@ fun String.parseDateToMillis(): Long? {
     } catch (e: Exception) {
         null
     }
+}
+
+fun <T> List<T>.chunkedBy(size: Int): List<List<T>> {
+    return this.chunked(size)
+}
+fun Long.formatCommentDateTime(): String {
+
+    val date = Date(this)
+    val dateFormat = SimpleDateFormat("dd MMM yyyy 'at' HH:mm", Locale.getDefault())
+    return dateFormat.format(date)
 }

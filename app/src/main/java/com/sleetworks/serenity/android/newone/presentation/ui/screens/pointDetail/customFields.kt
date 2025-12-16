@@ -143,7 +143,7 @@ fun CustomFieldTextLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -288,7 +288,7 @@ fun CustomFieldCostLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -481,7 +481,7 @@ fun CustomFieldDateLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -647,7 +647,7 @@ fun CustomFieldListLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -664,8 +664,9 @@ fun CustomFieldListLayout(
 //            val selectedOption = findSubListItemById(customField.subList, selectedValueId)
 //            val displayText = selectedOption?.label ?: selectedValueId.ifEmpty { "Select..." }
 
+            val text = retrieveLabel(selectedValueId, customField.subList?:emptyList(), false, "")
             Text(
-                text = value.ifEmpty { "Select..." },
+                text = text?.ifEmpty { "Select..." }?:"Select...",
                 color = if (selectedValueId.isEmpty()) Color.Gray else Color.Black,
                 fontSize = 16.sp,
                 modifier = Modifier
@@ -722,17 +723,17 @@ private fun retrieveLabel(
         if (sublist.id.toString() == idOfChosenElement) {
             return retrieveLabel(
                 idOfChosenElement,
-                sublist.subList,
+                sublist.subList?:emptyList(),
                 true,
                 value + sublist.label
             )
         } else {
             if (sublist
-                    .subList.isNotEmpty()
+                    ?.subList?.isNotEmpty() == true
             ) {
                 val `val` = retrieveLabel(
                     idOfChosenElement,
-                    sublist.subList,
+                    sublist.subList?:emptyList(),
                     false,
                     value + sublist.label + "/"
                 )
@@ -854,7 +855,7 @@ fun CustomFieldNumbersLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -1041,7 +1042,7 @@ fun CustomFieldRichTextLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -1192,7 +1193,7 @@ fun TimeCustomFieldLayout(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline Modified",
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
             }
@@ -1345,7 +1346,7 @@ fun CustomFieldPercentageLayout(
                         painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                         contentDescription = "Offline modified",
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(30.dp)
                             .padding(end = 5.dp)
                     )
                 }
@@ -1523,7 +1524,7 @@ fun CustomFieldCheckboxLayout(
                     painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                     contentDescription = "Offline modified",
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(30.dp)
                         .padding(end = 5.dp)
                 )
             }
@@ -1647,7 +1648,7 @@ fun CustomFieldTimelineLayout(
                     painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                     contentDescription = "Offline modified",
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(30.dp)
                         .padding(end = 5.dp)
                 )
             }
@@ -1935,7 +1936,7 @@ fun CustomFieldMultiListLayout(
                     painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                     contentDescription = "Offline modified",
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(30.dp)
                         .padding(end = 5.dp)
                 )
             }

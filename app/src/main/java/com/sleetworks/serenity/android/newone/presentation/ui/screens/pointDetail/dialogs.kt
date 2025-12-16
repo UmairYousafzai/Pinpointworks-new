@@ -211,10 +211,10 @@ fun PointTextEditDialog(
                 TextField(
                     value = textValue,
                     onValueChange = { newValue ->
-                        if (customField != null) {
-                            textValue = newValue.validateDecimalInput(decimalAllowed)
+                        textValue = if (customField != null && CustomFieldType.fromValue(customField.type) != CustomFieldType.TEXT) {
+                            newValue.validateDecimalInput(decimalAllowed)
                         } else {
-                            textValue = newValue
+                            newValue
                         }
                     },
                     modifier = Modifier
@@ -1262,9 +1262,11 @@ fun ListDialogInCompose(
             shape = MaterialTheme.shapes.large,
             tonalElevation = 8.dp
         ) {
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .background(color = Color.White)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color.White)
+            ) {
                 // --- Dialog Header ---
                 Column(
                     modifier = Modifier.padding(
@@ -1345,7 +1347,7 @@ fun ListDialogInCompose(
                     }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = {
-                        onAccept(selectedId)
+                        onAccept(selectedId,)
                         onDismissRequest()
                     }) {
                         Text("Accept")
@@ -1489,7 +1491,11 @@ fun MultiSelectListDialog(
         Surface(modifier = Modifier.fillMaxHeight(0.8f)) {
             Column(modifier = Modifier.padding(vertical = 24.dp)) {
                 // --- Header ---
-                Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 24.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
                 Spacer(Modifier.height(16.dp))
                 TextField(
                     value = searchQuery,
@@ -1510,7 +1516,9 @@ fun MultiSelectListDialog(
                             selectedIds = selectedIds.value,
                             onItemClick = { itemId ->
                                 val currentIds = selectedIds.value.toMutableSet()
-                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(itemId)
+                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(
+                                    itemId
+                                )
                                 selectedIds.value = currentIds
                             }
                         )
@@ -1521,7 +1529,9 @@ fun MultiSelectListDialog(
                             selectedIds = selectedIds.value,
                             onItemClick = { itemId ->
                                 val currentIds = selectedIds.value.toMutableSet()
-                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(itemId)
+                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(
+                                    itemId
+                                )
                                 selectedIds.value = currentIds
                             }
                         )

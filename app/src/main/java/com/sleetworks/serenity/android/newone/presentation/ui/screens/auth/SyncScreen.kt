@@ -34,8 +34,8 @@ import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.ui.components.LoaderButton
-import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.FirstSyncViewModel
+import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
 import com.sleetworks.serenity.android.newone.ui.theme.PaleGold
 import com.sleetworks.serenity.android.newone.ui.theme.PinpointworksNewTheme
 
@@ -80,7 +80,7 @@ fun SyncScreen(
                 }
 
                 is UIEvent.PopBackStack -> navController.popBackStack()
-
+                UIEvent.Logout -> {}
             }
         }
     }

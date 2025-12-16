@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.remote
 import android.content.Context
 import com.sleetworks.serenity.android.newone.data.datasource.remote.ApiService
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.updatedPoint.UpdatedPoint
 import com.sleetworks.serenity.android.newone.data.network.Resource
@@ -34,6 +35,16 @@ class PointRemoteRepositoryImpl @Inject constructor(
         return safeApiCall(context){
             retrofitProvider.getRetrofit().create(ApiService::class.java)
                 .updatePointFields(pointId,body)
+        }
+    }
+
+    override suspend fun getPointDetail(
+        pointId: String,
+        workSpaceId: String
+    ): Resource<ApiResponse<Point>> {
+
+        return safeApiCall(context){
+            retrofitProvider.getRetrofit().create(ApiService::class.java).getPointDetail(pointId,workSpaceId)
         }
     }
 

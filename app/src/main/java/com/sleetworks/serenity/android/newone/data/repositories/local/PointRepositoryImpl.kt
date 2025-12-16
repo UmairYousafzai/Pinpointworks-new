@@ -6,6 +6,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelatio
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
+import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -14,6 +15,10 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
     PointRepository {
 
     override suspend fun insertPoint(point: Point) {
+        pointDao.upsertPointWithChildren(point.toInsertPoint())
+    }
+
+    override suspend fun insertPoint(point: PointDomain) {
         pointDao.upsertPointWithChildren(point.toInsertPoint())
     }
 
@@ -42,7 +47,11 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
         return pointDao.getPointByLocalId(localID)
     }
 
-    override suspend fun getPointByWorkspaceID(workspaceID: String): Flow<List<PointWithRelations>> {
+    override suspend fun getPointByWorkspaceIDFlow(workspaceID: String): Flow<List<PointWithRelations>> {
+        return pointDao.getPointByWorkspaceIdFlow(workspaceID)
+    }
+
+    override suspend fun getPointByWorkspaceID(workspaceID: String): List<PointWithRelations> {
         return pointDao.getPointByWorkspaceId(workspaceID)
     }
 

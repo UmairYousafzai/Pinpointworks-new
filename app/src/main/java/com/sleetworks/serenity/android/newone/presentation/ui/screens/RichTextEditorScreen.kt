@@ -45,7 +45,6 @@ fun RichTextEditorScreen(
     val navigator = rememberWebViewNavigator()
     val fieldType by viewModel.fieldType.collectAsState()
     val customFieldId by viewModel.customFieldId.collectAsState()
-    val customFieldTempId by viewModel.customFieldTempId.collectAsState()
     BackHandler {
 
         navController.popBackStack()

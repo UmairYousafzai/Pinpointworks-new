@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.presentation.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
@@ -12,6 +13,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRep
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.utils.FIRST_SYNC
@@ -35,6 +37,8 @@ class FirstSyncViewModel @Inject constructor(
     val customFieldRepository: CustomFieldRepository,
     val shareRepository: ShareRepository,
     val userRepository: UserRepository,
+    val imageRemoteRepository: ImageRemoteRepository,
+    val userImageStore: UserImageStore,
     val dataStoreRepository: DataStoreRepository
 ) : ViewModel() {
 
@@ -251,4 +255,7 @@ class FirstSyncViewModel @Inject constructor(
         }
 
     }
+
+
+
 }

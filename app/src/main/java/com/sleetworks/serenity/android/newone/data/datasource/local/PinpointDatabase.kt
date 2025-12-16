@@ -16,6 +16,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointAss
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointCustomFieldDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointTagDao
+import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ReactionDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.ShareDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SiteDao
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.SubListDao
@@ -24,6 +25,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.dao.Workspac
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
+import com.sleetworks.serenity.android.newone.data.models.local.entities.ReactionEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
@@ -50,6 +52,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
         PointCustomFieldEntity::class,
         CommentEntity::class,
         OfflineModifiedPointFields::class,
+        ReactionEntity::class,
     ],
     version = 1
 )
@@ -75,4 +78,5 @@ abstract class PinpointDatabase : RoomDatabase() {
     abstract fun assigneePointDao(): PointAssigneeDao
     abstract fun pointCustomFieldDao(): PointCustomFieldDao
     abstract fun commentDao(): CommentDao
+    abstract fun reactionDao(): ReactionDao
 }

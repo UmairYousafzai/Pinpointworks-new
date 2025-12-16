@@ -39,9 +39,6 @@ class RichTextEditorViewModel @Inject constructor(
     val customFieldId: StateFlow<String>
         get() = _customFieldId
 
-    private val _customFieldTempId: MutableStateFlow<String> = MutableStateFlow("")
-    val customFieldTempId: StateFlow<String>
-        get() = _customFieldTempId
 
     private val _initialValue: MutableStateFlow<String> = MutableStateFlow("")
     val initialValue: StateFlow<String>

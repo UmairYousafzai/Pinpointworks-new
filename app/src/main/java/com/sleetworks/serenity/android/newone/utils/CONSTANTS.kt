@@ -11,4 +11,8 @@ object CONSTANTS {
     const val CF_TEMPLATE: String = "customFieldTemplateId"
     const val VALUE: String = "value"
 
+    ///dialog type
+    const val LOGOUT="logout"
+    const val UNAUTHORIZED= "unauthorized"
+
 }

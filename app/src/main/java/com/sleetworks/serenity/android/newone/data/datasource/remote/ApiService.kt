@@ -6,6 +6,8 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.L
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.updatedPoint.UpdatedPoint
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
@@ -59,7 +61,7 @@ interface ApiService {
     @GET("v1/site")
     suspend fun getAllSites(): Response<ApiResponse<List<Site>>>
 
-    @GET("site/{siteId}")
+    @GET("v1/site/{siteId}")
     suspend fun getSite(@Path("siteId") siteId: String): Response<ApiResponse<Site>>
 
     /////////// Share //////////////
@@ -83,6 +85,14 @@ interface ApiService {
         @Path("id") pointId: String,
         @Body params: RequestBody
     ): Response<ApiResponse<UpdatedPoint>>
+
+    @GET("v2/points/{id}")
+    suspend fun getPointDetail(
+        @Path("id") pointId: String,
+        @Query("workspaceId") spaceId: String
+    ): Response<ApiResponse<Point>>
+
+
     //////////// Images //////////////
 
     @GET("v1/images/{imageId}/file/size/square/200")
@@ -99,7 +109,7 @@ interface ApiService {
 
 
     @GET("v1/comments/points/{id}")
-    suspend fun getCommentPoint(@Path("id") pointId: String): Response<ApiResponse<List<Comment>>>
+    suspend fun getPointComment(@Path("id") pointId: String): Response<ApiResponse<List<Comment>>>
 
 
     /////////// user //////////////
@@ -109,8 +119,17 @@ interface ApiService {
     @GET("v1/workspace/{id}/users")
     suspend fun getAllWorkspaceUsers(@Path("id") id: String): Response<ApiResponse<List<Assignee>>>
 
+    /* *********************************** Points Reaction ******************/
+    @GET("v1/reactions/points/{pointId}")
+    suspend fun getPointCommentReactions(@Path("pointId") pointId: String): Response<ApiResponse<List<Reaction>>>
 
-//
+        @POST("v1/reactions/comments/{defectId}/like")
+    suspend fun addReaction(
+        @Path("defectId") commentId: String,
+        @Query("remove") remove: Boolean
+    ): Response<ApiResponse<Reaction>>
+
+    //
 //    @POST("points")
 //    fun addDefects(
 //        @Body body: DefectForSending,
@@ -180,12 +199,15 @@ interface ApiService {
 //        @Query("remove") remove: Boolean
 //    ): Call<ApiResponse<ReactionEntity>>
 //
-//    /* *********************************** Images ******************/
+    /* *********************************** Images ******************/
 //    @GET("images/{id}")
 //    fun getImage(@Path("id") imageId: String): Call<ApiResponse<Image>>
 //
-//    @GET("images/fetch-all-images/{id}")
-//    fun getImagesForPoint(@Path("id") pointId: String): Call<ApiResponse<Map<String, String>>>
+    @GET("v1/images/fetch-all-images/{id}")
+    suspend fun getImagesForPoint(@Path("id") pointId: String): Response<ApiResponse<Map<String, String>>>
+
+    @GET("v1/images/{imageId}/file/size/bounded/1200")
+    suspend fun downloadImageLargeSize(@Path("imageId") imageId: String): Response<ResponseBody>
 //
 //    @GET("images/itemref/{id}")
 //    fun getImageListForPoint(@Path("id") pointId: String): Call<ApiResponse<List<Image>>>
@@ -251,8 +273,7 @@ interface ApiService {
 //
 
 //
-//    @GET("images/{imageId}/file/size/bounded/1200")
-//    fun downloadImageLargeSize(@Path("imageId") imageId: String): Call<ResponseBody>
+
 //
 //    @GET("/api/v1/video/{videoId}/file")
 //    fun downloadVideo(@Path("videoId") videoID: String): Call<ResponseBody>

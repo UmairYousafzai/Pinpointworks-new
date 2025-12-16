@@ -1,6 +1,8 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDetail
 
+import CircularImage
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +25,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -34,13 +39,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.aghajari.compose.text.AnnotatedText
 import com.aghajari.compose.text.fromHtml
 import com.google.gson.Gson
@@ -55,6 +67,13 @@ import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.data.models.local.PointFieldType
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.CreatedBy
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UpdatedBy
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.TargetRef
+import com.sleetworks.serenity.android.newone.data.storage.InternalWorkspaceStorageUtils
+import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.domain.models.share.CustomFieldPermissionDomainModel
 import com.sleetworks.serenity.android.newone.domain.models.share.PermissionDomainModel
@@ -68,6 +87,7 @@ import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemPri
 import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemStatus
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.PointDetailViewModel
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
+import com.sleetworks.serenity.android.newone.ui.theme.BrightBlue
 import com.sleetworks.serenity.android.newone.ui.theme.Goldenrod
 import com.sleetworks.serenity.android.newone.ui.theme.LightGrey
 import com.sleetworks.serenity.android.newone.ui.theme.LightSalmon
@@ -78,8 +98,11 @@ import com.sleetworks.serenity.android.newone.ui.theme.onyx
 import com.sleetworks.serenity.android.newone.ui.theme.paleBlueGray
 import com.sleetworks.serenity.android.newone.utils.TextRichOptions
 import com.sleetworks.serenity.android.newone.utils.clearResult
+import com.sleetworks.serenity.android.newone.utils.formatCommentDateTime
 import com.sleetworks.serenity.android.newone.utils.resultFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,11 +169,12 @@ fun DefectDetailScreen(
     val errorMessage by viewModel.error.collectAsState()
     val workspaceUsers by viewModel.workspaceUser.collectAsState()
     val site by viewModel.site.collectAsState()
+    val workspaceId by viewModel.workspaceID.collectAsState()
     val share by viewModel.share.collectAsState()
     val offlineModifiedPointFields by viewModel.offlinePointFields.collectAsState()
     val customFieldTemplates by viewModel.customFieldTemplates.collectAsState()
     val customFieldTemplatesMapID by remember { mutableStateOf(customFieldTemplates.associateBy { it.id.toString() }) }
-    var pointCustomFieldByTemplateId by remember { mutableStateOf(point.customFieldSimplyList.associateBy { it.customFieldTemplateId }) }
+    val pointCustomFieldByTemplateId by viewModel.pointCustomFieldByTemplateId.collectAsState()
     val customFieldPermission by remember {
         mutableStateOf(share?.advancedAccessLevels?.customFields?.associateBy {
             it.templateId
@@ -164,6 +188,7 @@ fun DefectDetailScreen(
 
     val fieldLoader by viewModel.fieldLoader.collectAsState()
     val fieldSuccess by viewModel.fieldSuccess.collectAsState()
+    val user by viewModel.user.collectAsState()
 
     LaunchedEffect(errorMessage) {
         if (errorMessage.isNotEmpty()) {
@@ -172,16 +197,25 @@ fun DefectDetailScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+
+        snapshotFlow {
+            Pair(site, workspaceId)
+        }
+            .first { (site, workspaceId) ->
+                site != null && workspaceId != null
+            }
+
+        viewModel.syncPoint()
+    }
+
     LaunchedEffect(offlineModifiedPointFields) {
         offlineModifiedFields = offlineModifiedPointFields.associateBy {
             it.field
         }
 
     }
-    LaunchedEffect(point) {
-        pointCustomFieldByTemplateId =
-            point.customFieldSimplyList.associateBy { it.customFieldTemplateId }
-    }
+
 
     LaunchedEffect(workspaceUsers) {
         Log.e(TAG, "DefectDetailScreen: ${Gson().toJson(workspaceUsers)}")
@@ -202,8 +236,11 @@ fun DefectDetailScreen(
 
             if (richCustomFieldId.isNotEmpty()) {
                 val cf = customFieldTemplatesMapID[richCustomFieldTempId]
-                val pointCf = pointCustomFieldByTemplateId[richCustomFieldId]
-                if (cf != null && pointCf != null) {
+                if (cf != null) {
+                    val pointCf =
+                        pointCustomFieldByTemplateId[richCustomFieldId] ?: cf.toPointCustomField()
+
+
                     pointCf.value = base64Value
                     viewModel.updateCustomField(cf, pointCf)
                 }
@@ -309,6 +346,7 @@ fun DefectDetailScreen(
                             permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onLockedClick = {
                                 showLockedDialog = true
                             },
@@ -333,6 +371,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onLockedClick = {
                                 showLockedDialog = true
                             },
@@ -356,6 +395,8 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+
                             onNotEditable = {
                                 sharedViewModel.showSnackbar("Not editable field")
 
@@ -376,11 +417,12 @@ fun DefectDetailScreen(
 
                         CustomFieldListLayout(
                             customField = customField,
-                            value = pointCF?.value?:"",
+                            value = pointCF?.value ?: "",
                             selectedValueId = pointCF?.idOfChosenElement ?: "",
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onNotEditable = {
                                 sharedViewModel.showSnackbar("Not editable field")
 
@@ -388,10 +430,10 @@ fun DefectDetailScreen(
                             onLockedClick = {
                                 showLockedDialog = true
                             },
-                            onOptionSelected = {value->
+                            onOptionSelected = { value ->
                                 val newPointCustomField =
                                     pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
+                                newPointCustomField.idOfChosenElement = value
                                 viewModel.updateCustomField(customField, newPointCustomField)
 
                             }
@@ -406,6 +448,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onNotEditable = {
                                 sharedViewModel.showSnackbar("Not editable field")
                             },
@@ -429,6 +472,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onNotEditable = {
                                 sharedViewModel.showSnackbar("Not editable field")
                             },
@@ -438,7 +482,7 @@ fun DefectDetailScreen(
                             onEditClick = {
                                 navController.navigate(
                                     Screen.RichTextEditorScreen.route +
-                                            "/${PointFieldType.DESCRIPTION.value}/${pointCF?.customFieldTemplateId}/${customField.id}/${pointCF?.value}"
+                                            "/${PointFieldType.DESCRIPTION.value}/${customField.id}/${pointCF?.value ?: ""}"
                                 )
                             }
                         )
@@ -452,6 +496,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onNotEditable = {
                                 sharedViewModel.showSnackbar("Not editable field")
                             },
@@ -476,6 +521,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onAddClick = { /* Handle add click */ },
                             onViewClick = { /* Handle view click */ },
                             onLockedClick = {
@@ -501,8 +547,8 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = false,
-                            onCheckedChange = { value->
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                            onCheckedChange = { value ->
                                 val newPointCustomField =
                                     pointCF ?: customField.toPointCustomField()
                                 newPointCustomField.value = value.toString()
@@ -525,7 +571,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
                             isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = false,
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onLockedClick = {
                                 showLockedDialog = true
                             },
@@ -561,7 +607,7 @@ fun DefectDetailScreen(
                             permission = permission,
                             isLoading = false,
                             isCompleted = false,
-                            isOfflineModified = false,
+                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
                             onLockedClick = {
                                 showLockedDialog = true
                             },
@@ -576,6 +622,72 @@ fun DefectDetailScreen(
 
             }
 
+            item {
+                PhotoSection(
+                    point = point,
+                    workspaceId = workspaceId ?: "",
+                    offlineModifiedFields = offlineModifiedFields,
+                    showPhotoSelectionDialog = {
+
+                    }
+                )
+                VideoSection(
+                    point = point,
+                    offlineModifiedFields = offlineModifiedFields,
+                    showVideoSelectionDialog = {
+
+                    }
+                )
+                CommentSection(
+                    comments = point.comments,
+                    viewModel = viewModel,
+                    offlineModifiedFields = offlineModifiedFields,
+                    onLikedClicked = { comment, isLiked ->
+                        val uuid: String = UUID.randomUUID().toString()
+                        val oldReaction = comment.reactions
+                        val newReaction =
+                            if (comment.reactions != null) {
+                                val oldLikes = ArrayList(comment.reactions.like)
+
+                                if (!isLiked) {
+                                    oldLikes.add(user.id)
+                                }else{
+                                    oldLikes.remove(user.id)
+
+                                }
+                                oldReaction.like = oldLikes
+                                oldReaction
+                            } else Reaction(
+                                id = uuid,
+                                header = Header(
+                                    createdBy = CreatedBy(user.username, user.id, "", user.imageID),
+                                    createdEpochMillis = System.currentTimeMillis(),
+                                    createdUserAgent = "",
+                                    updatedBy = UpdatedBy(
+                                        user.username,
+                                        user.id,
+                                        user.imageID,
+                                        ""
+                                    ),
+                                    updatedEpochMillis = System.currentTimeMillis(),
+                                    updatedUserAgent = ""
+                                ),
+                                like = if (!isLiked)listOf(user.id) else emptyList(),
+                                tags = emptyList(),
+                                targetRef = TargetRef(
+                                    type = "",
+                                    caption = "",
+                                    id = comment.id
+                                ),
+                                type = "",
+                                commentId = comment.id
+
+                            )
+
+                        viewModel.updateReaction(newReaction, isLiked)
+                    }
+                )
+            }
 
         }
 
@@ -587,7 +699,7 @@ fun DefectDetailScreen(
                 },
                 onConfirm = { value ->
                     showEditTextDialog = false
-                    viewModel.updatePoint(mapOf(DefectFieldType.TITLE to value))
+                    viewModel.updatePointFields(mapOf(DefectFieldType.TITLE to value))
                 },
 
                 )
@@ -598,7 +710,7 @@ fun DefectDetailScreen(
                 selectedPriority = PointItemPriority.from(point.priority),
                 onPrioritySelected = { priority ->
                     showPriorityDialog = false
-                    viewModel.updatePoint(mapOf(DefectFieldType.PRIORITY to priority.label.uppercase()))
+                    viewModel.updatePointFields(mapOf(DefectFieldType.PRIORITY to priority.label.uppercase()))
                 },
                 onDismiss = {
                     showPriorityDialog = false
@@ -611,7 +723,7 @@ fun DefectDetailScreen(
                 selectedStatus = PointItemStatus.from(point.status),
                 onStatusSelected = { status ->
                     showPointStatusDialog = false
-                    viewModel.updatePoint(
+                    viewModel.updatePointFields(
                         mapOf(
                             DefectFieldType.STATUS to
                                     PointItemStatus.toUpperValue(status.label)
@@ -632,7 +744,7 @@ fun DefectDetailScreen(
             FlaggedChoiceDialog(
                 selectedFlaggedState = point.flagged,
                 onFlaggedStateSelected = { state ->
-                    viewModel.updatePoint(
+                    viewModel.updatePointFields(
                         mapOf(
                             DefectFieldType.RED_FLAG to
                                     state
@@ -654,7 +766,7 @@ fun DefectDetailScreen(
                 selectedAssigneeIds = point.assigneeIds,
                 onAssigneeSelected = { ids ->
                     showAssigneeDialog = false
-                    viewModel.updatePoint(mapOf(DefectFieldType.ASSIGNEES to ids))
+                    viewModel.updatePointFields(mapOf(DefectFieldType.ASSIGNEES to ids))
                 },
                 onDismiss = {
                     showAssigneeDialog = false
@@ -668,7 +780,7 @@ fun DefectDetailScreen(
                 selectedTags = point.tags,
                 onTagSelected = { ids ->
                     showTagDialog = false
-                    viewModel.updatePoint(mapOf(DefectFieldType.TAGS to ids))
+                    viewModel.updatePointFields(mapOf(DefectFieldType.TAGS to ids))
 
                 },
                 onDismiss = {
@@ -1234,6 +1346,325 @@ fun TextChipWithIcon(
 
 }
 
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoSection(
+    point: PointDomain,
+    workspaceId: String,
+    offlineModifiedFields: Map<String, OfflineModifiedPointFields>,
+    showPhotoSelectionDialog: () -> Unit,
+) {
+    Row(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_camera_solid),
+            contentDescription = "Completed",
+            tint = null,
+            modifier = Modifier
+                .size(22.dp)
+                .padding(end = 5.dp)
+        )
+
+        Text(
+
+            text = "Photos",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 5.dp)
+        )
+
+        if (offlineModifiedFields.contains(DefectFieldType.IMAGES)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
+                contentDescription = "Offline modified",
+                modifier = Modifier
+                    .size(30.dp)
+            )
+        }
+    }
+    val context = LocalContext.current
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp, horizontal = 5.dp),
+        maxItemsInEachRow = 4,
+    ) {
+        repeat(point.images.size) {
+            val thumbnailFile = InternalWorkspaceStorageUtils().getFileReference(
+                workspaceId,
+                "$workspaceId/images/thumb/",
+                point.images[it].id + ".png",
+                context
+            )
+            Card(
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(horizontal = 2.dp, vertical = 5.dp),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                border = BorderStroke(1.dp, Color.LightGray)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(thumbnailFile)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Thumbnail",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.ic_image_placeholder),
+                    error = painterResource(R.drawable.ic_image_placeholder)
+                )
+            }
+        }
+
+
+    }
+
+
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun VideoSection(
+    point: PointDomain,
+    offlineModifiedFields: Map<String, OfflineModifiedPointFields>,
+    showVideoSelectionDialog: () -> Unit,
+) {
+    Row(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_video_solid),
+            contentDescription = "Video section icon",
+            tint = null,
+            modifier = Modifier
+                .size(22.dp)
+                .padding(end = 5.dp)
+        )
+
+        Text(
+
+            text = "Videos",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 5.dp)
+        )
+
+        if (offlineModifiedFields.contains(DefectFieldType.VIDEOS)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
+                contentDescription = "Offline modified",
+                modifier = Modifier
+                    .size(30.dp)
+            )
+        }
+    }
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp, horizontal = 15.dp),
+        maxItemsInEachRow = 4,
+    ) {
+        repeat(point.videos.size) {
+
+            Text(
+                point.videos[it].caption ?: "",
+                style = TextStyle(color = onyx, fontSize = 16.sp),
+                modifier = Modifier.padding(vertical = 10.dp)
+            )
+
+        }
+
+
+    }
+
+
+}
+
+@Composable
+fun CommentSection(
+    comments: List<CommentDomain>,
+    viewModel: PointDetailViewModel,
+    offlineModifiedFields: Map<String, OfflineModifiedPointFields>,
+    onLikedClicked: (CommentDomain, Boolean) -> Unit,
+) {
+
+    Row(
+        modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_comment_alt_solid),
+            contentDescription = "Comment"
+        )
+        Text(
+
+            text = "Comments",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 5.dp)
+        )
+
+        if (offlineModifiedFields.contains(DefectFieldType.REACTION)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
+                contentDescription = "Offline modified",
+                modifier = Modifier
+                    .size(30.dp)
+            )
+        }
+
+    }
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp, horizontal = 15.dp),
+        maxItemsInEachRow = 1,
+    ) {
+        repeat(comments.size) {
+
+
+            CommentItem(comments[it], viewModel, onLikedClicked)
+        }
+
+
+    }
+
+
+}
+
+@Composable
+fun CommentItem(
+    comment: CommentDomain,
+    viewModel: PointDetailViewModel,
+    onLikeClick: (CommentDomain, Boolean) -> Unit
+) {
+    val user by viewModel.user.collectAsState()
+    var isLikedByMe by remember { mutableStateOf(comment.reactions?.like?.contains(user.id) == true) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        val authorAndDate =
+            "${comment.header.updatedBy.caption} - ${comment.header.updatedEpochMillis.formatCommentDateTime()}"
+
+        Row(
+            modifier = Modifier
+                .weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val imageFile = viewModel.getUserAvatar(comment.header.createdBy.primaryImageId)
+            CircularImage(comment.header.createdBy.caption, imageFile, 45)
+            Spacer(modifier = Modifier.width(20.dp))
+
+            var commentText = TextRichOptions
+                .convertBase64ToRichContentString(comment.commentRich)
+            if (commentText.endsWith("<br>")) {
+                commentText = commentText.replace("<br>", "")
+            }
+            Column {
+
+                // Comment Text
+                AnnotatedText(
+                    text = commentText
+                        .fromHtml(),
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+
+//                // Updated date (optional)
+//                if (showUpdatedTime && updatedDateTime != null) {
+//                    Text(
+//                        text = updatedDateTime,
+//                        fontSize = 12.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        color = colorResource(id = R.color.comment_date_color)
+//                    )
+//                }
+
+                // Author + date
+                Text(
+                    text = authorAndDate,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = gray
+                )
+
+                // Likes row
+                if (comment.reactions?.like?.isNotEmpty() == true) {
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isLikedByMe)
+                                    R.drawable.thumb_up_blue
+                                else
+                                    R.drawable.thumb_up_blue_empty
+                            ),
+                            contentDescription = "Like Icon",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(15.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+                        val text = if (isLikedByMe) {
+                            if (comment.reactions.like.size == 1) {
+                                " You liked this"
+                            } else {
+                                "You &" + comment.reactions.like.size.toString() + " other liked this"
+                            }
+                        } else {
+                            " ${comment.reactions.like.size} other liked this"
+                        }
+                        Text(
+                            text = text,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BrightBlue
+                        )
+                    }
+                }
+            }
+        }
+
+        // Like button (right side)
+        val icon = if (isLikedByMe) painterResource(id = R.drawable.thumb_up_blue) else {
+            if (comment.reactions?.like?.isNotEmpty() == true) painterResource(id = R.drawable.thumb_up_blue_empty)
+            else painterResource(
+                id =
+                    R.drawable.thumb_up
+            )
+        }
+        Icon(
+            painter = icon,
+            contentDescription = "Like Button",
+            modifier = Modifier
+                .size(30.dp)
+                .padding(horizontal = 5.dp)
+                .clickable {
+
+                    onLikeClick(comment, isLikedByMe)
+                           isLikedByMe = !isLikedByMe},
+            tint = Color.Unspecified
+        )
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

@@ -1,11 +1,12 @@
 package com.sleetworks.serenity.android.newone.data.repositories.local
 
+import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointDatabase
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.AssigneeDao
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import javax.inject.Inject
 
-class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao) : UserRepository {
+class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao, val database: PinpointDatabase) : UserRepository {
     override suspend fun insertUser(user: AssigneeEntity) {
         userDao.insertUser(user)
     }
@@ -26,4 +27,10 @@ class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao) : UserRep
     override suspend fun getAllUsers(): List<AssigneeEntity> {
         return userDao.getAllUsers()
     }
+
+    override suspend fun clearDb() {
+        database.clearAllTables()
+    }
+
+
 }

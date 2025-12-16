@@ -60,7 +60,7 @@ fun Navigation(
         }
 
         composable(
-            route = Screen.RichTextEditorScreen.route + "/{fieldType}/{customFieldId}/{customFieldTempId}/{initialValue}",
+            route = Screen.RichTextEditorScreen.route + "/{fieldType}/{customFieldId}/{initialValue}",
             arguments = listOf(
                 navArgument("fieldType") {
                     type = NavType.StringType
@@ -69,10 +69,7 @@ fun Navigation(
                     type = NavType.StringType
                     defaultValue = ""
                 },
-                navArgument("customFieldTempId") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                },
+
                 navArgument("initialValue") { type = NavType.StringType }
             )
 

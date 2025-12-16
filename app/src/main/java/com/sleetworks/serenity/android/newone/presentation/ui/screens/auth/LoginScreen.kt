@@ -116,7 +116,8 @@ fun LoginScreen(
                 }
 
                 is UIEvent.PopBackStack -> navController.popBackStack()
-
+                UIEvent.Logout -> {
+                }
             }
         }
     }

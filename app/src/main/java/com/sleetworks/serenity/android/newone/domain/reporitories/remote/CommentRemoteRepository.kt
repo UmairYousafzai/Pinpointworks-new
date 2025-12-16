@@ -2,6 +2,7 @@ package com.sleetworks.serenity.android.newone.domain.reporitories.remote
 
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.network.Resource
 
 interface CommentRemoteRepository {
@@ -9,4 +10,12 @@ interface CommentRemoteRepository {
         pointId: String
     ): Resource<ApiResponse<List<Comment>>>
 
+    suspend fun getPointCommentsReaction(
+        pointId: String
+    ): Resource<ApiResponse<List<Reaction>>>
+
+    suspend fun updateCommentReaction(
+        commentId: String,
+        remove: Boolean
+    ): Resource<ApiResponse<Reaction>>
 }

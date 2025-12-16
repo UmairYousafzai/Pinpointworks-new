@@ -7,7 +7,8 @@ interface UserRepository {
     suspend fun insertUser(user: AssigneeEntity)
     suspend fun insertUsers(users: List<AssigneeEntity>)
     suspend fun getUserById(userId: String): AssigneeEntity?
-    suspend fun     getUserByWorkspaceId(workspaceId: String): List<AssigneeEntity>
+    suspend fun getUserByWorkspaceId(workspaceId: String): List<AssigneeEntity>
     suspend fun getAllUsers(): List<AssigneeEntity>
+    suspend fun clearDb()
 
 }

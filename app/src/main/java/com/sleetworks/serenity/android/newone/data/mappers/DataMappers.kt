@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.data.models.local.InsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.ReactionEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.ShareEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SubListItemEntity
@@ -16,6 +17,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
@@ -24,6 +26,9 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListItem
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
+import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
+import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
+import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 
 fun Assignee.toEntity(workspaceID: String): AssigneeEntity {
     return AssigneeEntity(
@@ -162,7 +167,7 @@ fun Point.toEntity(): PointEntity {
         documents = this.documents ?: arrayListOf(),
         flagged = this.flagged,
         header = this.header, // nullable, no problem
-        images = this.images ?: arrayListOf(),
+        images = this.images.map { it.toDomain() } as ArrayList<LocalImage> ?: arrayListOf(),
         images360 = this.images360 ?: arrayListOf(),
         pins = this.pins ?: arrayListOf(),
         polygons = this.polygons ?: arrayListOf(),
@@ -182,7 +187,7 @@ fun Point.toEntity(): PointEntity {
         ),
         isModified = false,
         edited = this.edited ?: true,
-        updatedAt = header?.updatedEpochMillis?:0
+        updatedAt = header?.updatedEpochMillis ?: 0
     )
 }
 
@@ -262,6 +267,71 @@ fun Comment.toEntity(): CommentEntity {
         workspaceRef = this.workspaceRef
 
     )
+}
+
+fun Reaction.toEntity(): ReactionEntity {
+    return ReactionEntity(
+        id = this.id,
+        header = this.header,
+        like = this.like,
+        commentId = this.targetRef?.id ?: this.commentId,
+        type = this.type,
+
+        )
+}
+
+fun ReactionEntity.toModel(): Reaction {
+    return Reaction(
+        id = this.id,
+        header = this.header,
+        like = this.like,
+        type = this.type,
+        targetRef = null,
+        tags = null,
+        commentId = commentId
+
+    )
+}
+
+fun PointDomain.toInsertPoint(): InsertPoint{
+    return InsertPoint(
+        point = this.toEntity(),
+        tags = this.tags?.map {
+            it.toTagEntity(
+                pointId = this.id ?: ""
+            )
+        } as ArrayList<PointTagEntity> ?: arrayListOf(),
+
+        assignees =assignees as List<PointAssigneeEntity>,
+        customFields = customFieldSimplyList as List<PointCustomFieldEntity>
+    )
+}
+fun PointDomain.toEntity(): PointEntity{
+
+    return PointEntity(
+        id = this.id,
+        localID = this.id,
+        isModified = false,
+        edited = true,
+        updatedAt = updatedAt,
+        description = this.description ?: "",
+        descriptionRich = this.descriptionRich ?: "",
+        createdBy = this.header?.createdBy?.caption ?: "",
+        documents = this.documents ?: arrayListOf(),
+        flagged = this.flagged,
+        header = this.header,
+        images = this.images,
+        images360 = this.images360 ?: arrayListOf(),
+        pins = this.pins,
+        polygons = this.polygons,
+        priority = this.priority ?: "",
+        sequenceNumber = this.sequenceNumber ?: 0,
+        status = this.status ?: "",
+        title = this.title ?: "",
+        videos = this.videos ?: arrayListOf(),
+        workspaceRef =this.workspaceRef,
+
+        )
 }
 
 
