@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 //    implementation(libs.accompanist.navigation.animation)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.exifinterface)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -130,7 +131,23 @@ dependencies {
 
     implementation(libs.annotatedtext)
 
-    implementation("androidx.work:work-runtime-ktx:2.11.0")
+    implementation(libs.androidx.work.runtime.ktx.v2110)
+
+    implementation(libs.photoeditor)
+    implementation(libs.sketchbook)
+
+    //image compressor
+    implementation(libs.compressor)
+
+    //video player
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.ui.compose)
+
+    //video compressor
+    implementation(libs.videocompressor)
+
+    implementation(libs.lightcompressor)
 
 }
 

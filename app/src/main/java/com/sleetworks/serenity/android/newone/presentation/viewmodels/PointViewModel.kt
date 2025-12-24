@@ -261,8 +261,11 @@ class PointViewModel @Inject constructor(
                         pointRepository.insertPoints(it.points)
                     }
                     updatePointSyncTime(System.currentTimeMillis())
-                    syncImages()
+                    Log.e("Site Sync", "Sync complete")
                     downloadUsersAvatar()
+
+                    syncImages()
+
                 }
 
                 is Resource.Error -> {
@@ -292,6 +295,8 @@ class PointViewModel @Inject constructor(
 
 
         viewModelScope.launch(Dispatchers.IO) {
+            Log.e("Site Sync", "Sync Start")
+
             try {
                 _loader.emit(Pair("Syncing Workspace.....", true))
                 Log.d(TAG, "syncData: start")
@@ -467,6 +472,7 @@ class PointViewModel @Inject constructor(
                 user.images[0].id
             )
         )
+        dataStoreRepository.saveUser(user)
 
     }
 
@@ -577,16 +583,18 @@ class PointViewModel @Inject constructor(
 
     fun syncImages() {
         syncImagesJob = viewModelScope.launch(Dispatchers.IO) {
+            Log.e("Images Sync", "Sync Start")
+
             try {
                 val workspaceId = workspaceID.value ?: return@launch
 
                 syncImagesUseCase(workspaceId, _loader)
 
             } catch (e: Exception) {
-                // Handle cancellation or other errors
                 Log.e(TAG, "syncImages job failed or was cancelled", e)
             } finally {
-                // Ensure the loader is always turned off
+                Log.e("Images Sync", "Sync complete")
+
                 _loader.emit(Pair("", false))
             }
         }

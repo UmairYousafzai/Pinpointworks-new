@@ -1,24 +1,44 @@
 package com.sleetworks.serenity.android.newone.presentation.viewmodels
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.primaverahq.videocompressor.VideoCompressor
+import com.primaverahq.videocompressor.settings.CompressionSettings
+import com.primaverahq.videocompressor.settings.EncoderSelectionMode
+import com.sleetworks.serenity.android.newone.data.datasource.VideoStore
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
+import com.sleetworks.serenity.android.newone.data.mappers.toDomain
 import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.models.local.NewCustomField
 import com.sleetworks.serenity.android.newone.data.models.local.OfflineFieldValue
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
 import com.sleetworks.serenity.android.newone.data.models.local.entities.SiteEntity
+import com.sleetworks.serenity.android.newone.data.models.remote.request.AddCommentRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.CreatedBy
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UpdatedBy
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.DefectRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
+import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.TargetRef
 import com.sleetworks.serenity.android.newone.data.network.NetworkUtil
 import com.sleetworks.serenity.android.newone.data.network.Resource
+import com.sleetworks.serenity.android.newone.data.storage.InternalWorkspaceStorageUtils
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
+import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.domain.models.share.ShareDomainModel
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CommentLocalRepository
@@ -31,19 +51,31 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.SiteRepo
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.WorkspaceRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.CommentRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.VideoRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointImageUseCase
 import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.CustomFieldTempUI
+import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 import com.sleetworks.serenity.android.newone.presentation.model.UserUiModel
 import com.sleetworks.serenity.android.newone.presentation.ui.model.CustomFieldType
 import com.sleetworks.serenity.android.newone.presentation.ui.model.DefectFieldType
 import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemPriority
 import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemStatus
 import com.sleetworks.serenity.android.newone.utils.CONSTANTS
+import com.sleetworks.serenity.android.newone.utils.SAVE_IMAGE_TO_EXTERNAL_STORAGE
+import com.sleetworks.serenity.android.newone.utils.SAVE_VIDEO_TO_EXTERNAL_STORAGE
+import com.sleetworks.serenity.android.newone.utils.convertToOfflineFieldValue
+import com.sleetworks.serenity.android.newone.utils.readExifDataAsJson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import id.zelory.compressor.Compressor
+import id.zelory.compressor.constraint.destination
+import id.zelory.compressor.constraint.format
+import id.zelory.compressor.constraint.quality
+import id.zelory.compressor.constraint.resolution
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -71,6 +103,8 @@ import okhttp3.RequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -88,7 +122,10 @@ class PointDetailViewModel @Inject constructor(
     private val workspaceRemoteRepository: WorkspaceRemoteRepository,
     private val shareRepo: ShareRepository,
     private val userImageStore: UserImageStore,
+    private val videoStore: VideoStore,
     private val syncPointImageUseCase: SyncPointImageUseCase,
+    private val imageRemoteRepository: ImageRemoteRepository,
+    private val videoRemoteRepository: VideoRemoteRepository,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext
     val context: Context,
@@ -190,7 +227,9 @@ class PointDetailViewModel @Inject constructor(
                 pointDomain.assignees.clear()
                 pointDomain.assignees.addAll(pointUser)
                 val sortComments =
-                    pointDomain.comments.sortedByDescending { it.header.updatedEpochMillis }
+                    pointDomain.comments.sortedByDescending {
+                        it.header?.updatedEpochMillis ?: it.addedTime
+                    }
                 pointDomain.comments = ArrayList(sortComments)
                 pointDomain
             }.stateIn(
@@ -495,35 +534,6 @@ class PointDetailViewModel @Inject constructor(
 
     }
 
-    private fun convertToOfflineFieldValue(value: Any): OfflineFieldValue {
-        return when (value) {
-            is Reaction -> OfflineFieldValue.CommentReactionValue(value)
-            is NewCustomField -> OfflineFieldValue.NewCustomFieldValue(value as List<NewCustomField>)
-            is String -> OfflineFieldValue.StringValue(value)
-            is Boolean -> OfflineFieldValue.BooleanValue(value)
-            is List<*> -> {
-                if (value.isNotEmpty() && value.first() is String) {
-                    OfflineFieldValue.StringListValue(value as List<String>)
-                } else if (value.isNotEmpty() && value.first() is NewCustomField) {
-                    OfflineFieldValue.NewCustomFieldValue(value as List<NewCustomField>)
-                } else {
-                    OfflineFieldValue.StringListValue(value.map { it.toString() })
-                }
-            }
-
-            is Set<*> -> {
-                if (value.isNotEmpty() && value.first() is String) {
-                    OfflineFieldValue.StringListValue(value.toList() as List<String>)
-                } else {
-                    OfflineFieldValue.StringListValue(value.map { it.toString() })
-                }
-            }
-
-            is Int -> OfflineFieldValue.IntValue(value)
-            is Double -> OfflineFieldValue.DoubleValue(value)
-            else -> OfflineFieldValue.StringValue(value.toString())
-        }
-    }
 
     suspend fun updatePointLocally(
         currentPoint: PointDomain,
@@ -546,15 +556,22 @@ class PointDetailViewModel @Inject constructor(
                     if (existingFieldIndex != -1) {
 
                         val oldField = updatedList[existingFieldIndex]
-                        if (CustomFieldType.fromValue(oldField.type) != CustomFieldType.LIST) {
-                            updatedList[existingFieldIndex] = oldField.copy(
-                                value = fields[DefectFieldType.CUSTOM_FIELDS] as? String
-                                    ?: oldField.value
-                            )
-                        } else {
+                        if (CustomFieldType.fromValue(oldField.type) == CustomFieldType.LIST) {
+
+
                             updatedList[existingFieldIndex] = oldField.copy(
                                 idOfChosenElement = fields[DefectFieldType.CUSTOM_FIELDS] as? String
                                     ?: oldField.idOfChosenElement
+                            )
+                        } else if (CustomFieldType.fromValue(oldField.type) == CustomFieldType.MULTI_LIST) {
+                            updatedList[existingFieldIndex] = oldField.copy(
+                                selectedItemIds = fields[DefectFieldType.CUSTOM_FIELDS] as? List<String>
+                                    ?: oldField.selectedItemIds
+                            )
+                        } else {
+                            updatedList[existingFieldIndex] = oldField.copy(
+                                value = fields[DefectFieldType.CUSTOM_FIELDS] as? String
+                                    ?: oldField.value
                             )
                         }
                     } else {
@@ -601,12 +618,13 @@ class PointDetailViewModel @Inject constructor(
             )
         fields.forEach { item ->
 
-            val convertedValue = convertToOfflineFieldValue(item.value)
+            val convertedValue = item.value.convertToOfflineFieldValue()
             pointRepository.insertModifiedField(
                 OfflineModifiedPointFields(
                     workspaceId = _workspaceID.value ?: "",
                     pointId = _pointID.value,
                     field = if (DefectFieldType.MENTIONS != item.key) customFieldKey.ifEmpty { item.key } else item.key,
+                    type = "",
                     value = convertedValue
                 )
             )
@@ -633,13 +651,22 @@ class PointDetailViewModel @Inject constructor(
         }
     }
 
-    fun syncPoint() {
+    fun syncPointDetail() {
         viewModelScope.launch(Dispatchers.IO) {
-            _mainLoader.value = true
-            if (NetworkUtil.isInternetAvailable(context)) {
+               Log.e("Point Sync", "Sync Start" )
+            syncPoint()
+            Log.e("Point Sync", "Sync complete" )
 
-                syncOfflineData()
+        }
+    }
 
+    suspend fun syncPoint() {
+        _mainLoader.value = true
+        if (NetworkUtil.isInternetAvailable(context)) {
+
+            syncOfflineData()
+
+            coroutineScope {
                 val site = _site.value
                 val workspaceID = workspaceID.value
                 val pointID = pointID.value
@@ -711,14 +738,14 @@ class PointDetailViewModel @Inject constructor(
                     }
 
                 }
-
-
-            } else {
-//                _error.value = "No Internet Connection"
             }
-            _mainLoader.value = false
 
+
+        } else {
+//                _error.value = "No Internet Connection"
         }
+        _mainLoader.value = false
+
 
     }
 
@@ -727,31 +754,146 @@ class PointDetailViewModel @Inject constructor(
         if (_offlinePointFields.value.isNotEmpty()) {
             val cfList = arrayListOf<NewCustomField>()
             val pointDetailsMap = mutableMapOf<String, Any>()
-            val commentReactions = mutableListOf<Reaction>()
+            val commentReactions = mutableListOf<Pair<Int?, Reaction>>()
+            val comments = mutableListOf<Pair<Int?, CommentDomain>>()
+            val images = mutableListOf<LocalImage>()
+            val videos = mutableListOf<Pair<String, File>>()
+            val deleteImageIds = mutableListOf<String>()
+            val deleteVideoIds = mutableListOf<String>()
             _offlinePointFields.value.forEach { item ->
-                if (item.value is OfflineFieldValue.NewCustomFieldValue) {
-                    cfList.addAll(item.value.getValue() as List<NewCustomField>)
-                } else if (item.value is OfflineFieldValue.CommentReactionValue) {
-                    commentReactions.add(item.value.getValue() as Reaction)
-                } else {
-                    pointDetailsMap.put(
-                        item.field,
-                        item.value.getValue()
-                    )
+                when (item.value) {
+                    is OfflineFieldValue.NewCustomFieldValue -> {
+                        Log.d(TAG, "syncOfflineData: Custom Field")
+                        cfList.addAll(item.value.getValue() as List<NewCustomField>)
+                    }
+
+                    is OfflineFieldValue.CommentReactionValue -> {
+                        Log.d(TAG, "syncOfflineData: Comment Reaction")
+
+                        commentReactions.add(item.id to item.value.getValue() as Reaction)
+                    }
+
+                    is OfflineFieldValue.CommentValue -> {
+
+                        comments.add(item.id to item.value.getValue() as CommentDomain)
+                    }
+
+                    is OfflineFieldValue.ImageListValue -> {
+                        images.addAll(item.value.getValue() as List<LocalImage>)
+                    }
+
+                    is OfflineFieldValue.VideoListValue -> {
+                        val videoList = item.value.getValue() as List<Video>
+                        videoList.forEach { video ->
+                            val videoFile = videoStore.getOriginalFileReference(
+                                workspaceID.value!!,
+                                video.id?:"",
+                            )
+                            if (videoFile.exists()) {
+                                videos.add(video.id!! to videoFile)
+                            }
+                        }
+                    }
+
+                    else -> {
+                        Log.d(TAG, "syncOfflineData: Point Detail")
+                        when (item.type) {
+                            (DefectFieldType.DELETED_IMAGES + _pointID.value) -> {
+                                deleteImageIds.add(item.field)
+                            }
+
+                            (DefectFieldType.DELETED_VIDEOS + _pointID.value) -> {
+                                deleteVideoIds.add(item.field)
+                            }
+
+                            else -> {
+                                pointDetailsMap.put(
+                                    item.field,
+                                    item.value.getValue()
+                                )
+                            }
+                        }
+
+                    }
                 }
 
             }
-            if (pointDetailsMap.isNotEmpty()) {
-                if (cfList.isNotEmpty()) {
-                    pointDetailsMap[DefectFieldType.CUSTOM_FIELDS] = cfList
-                }
-                updatePoint(pointDetailsMap, isManualSync = true)
+            if (deleteImageIds.isNotEmpty()) {
+                deleteImages(deleteImageIds)
+            }
+            if (deleteVideoIds.isNotEmpty()) {
+                deleteVideos(deleteVideoIds)
             }
             if (commentReactions.isNotEmpty()) {
                 updateLocalReactions(commentReactions)
             }
+            if (comments.isNotEmpty()) {
+                updateLocalComments(comments)
+            }
+            if (images.isNotEmpty()) {
+                val storageUtils = InternalWorkspaceStorageUtils()
+
+                uploadImages(
+                    images.map {
+                        val originalFile = storageUtils.getFileReference(
+                            workspaceID.value!!,
+                            "${workspaceID.value}/images/original/",
+                            "${it.id}.jpg",
+                            context
+                        )
+                        it.id to originalFile
+                    },
+                    false
+                )
+            }
+            
+            if (videos.isNotEmpty()) {
+                uploadVideos(videos, false)
+            }
+
+            if (cfList.isNotEmpty()) {
+                pointDetailsMap[DefectFieldType.CUSTOM_FIELDS] = cfList
+            }
+            if (pointDetailsMap.isNotEmpty()) {
+                updatePoint(pointDetailsMap, isManualSync = true)
+            }
         }
 
+    }
+
+    suspend fun deleteImages(ids: List<String>) {
+        coroutineScope {
+
+            ids.chunked(10).forEach { chunk ->
+
+                chunk.map { imageId ->
+                    async {
+                        imageRemoteRepository.removeImage(_pointID.value, imageId)
+                        pointRepository.deleteModifiedFieldByFieldValue(imageId)
+
+                    }
+                }.awaitAll()
+
+            }
+
+        }
+    }
+
+    suspend fun deleteVideos(ids: List<String>) {
+        coroutineScope {
+
+            ids.chunked(10).forEach { chunk ->
+
+                chunk.map { videoId ->
+                    async {
+                        videoRemoteRepository.deleteVideo(_pointID.value, videoId)
+                        pointRepository.deleteModifiedFieldByFieldValue(videoId)
+                    }
+                }.awaitAll()
+
+            }
+
+        }
     }
 
     fun updateCustomField(
@@ -781,10 +923,8 @@ class PointDetailViewModel @Inject constructor(
         if (customFieldType == CustomFieldType.LIST) {
             customField.value = pointCustomField.idOfChosenElement ?: ""
         } else if (customFieldType == CustomFieldType.MULTI_LIST) {
-//            if (filledCustomField.getSelectedItemIds() != null) {
-//                customField.setSelectedItemIds(filledCustomField.getSelectedItemIds())
-//                customField.setType(CustomField.TYPE_MULTI_LIST)
-//            }
+            customField.selectedItemIds = pointCustomField.selectedItemIds
+            customField.type = pointCustomField.type
         } else {
             customField.value = pointCustomField.value
         }
@@ -828,25 +968,92 @@ class PointDetailViewModel @Inject constructor(
         return userImageStore.getAvatarFile(imageID)
     }
 
-    suspend fun updateLocalReactions(reactions: List<Reaction>) {
+    suspend fun updateLocalReactions(reactions: MutableList<Pair<Int?, Reaction>>) {
 
         coroutineScope {
 
-            reactions.map { reaction ->
+            reactions.map { reactionPair ->
                 async {
-                    val id = reaction.like.find {
+                    val id = reactionPair.second.like.find {
                         it == _user.value.id
                     }
-                    addReaction(reaction, id == null)
+                    addReaction(reactionPair.second, id == null)
+                    reactionPair.first?.let { pointRepository.deleteModifiedFieldById(it) }
                 }
             }.awaitAll()
 
         }
     }
 
-    fun updateReaction(reaction: Reaction, shouldAdd: Boolean) {
+    suspend fun updateLocalComments(comments: MutableList<Pair<Int?, CommentDomain>>) {
+
+        coroutineScope {
+
+            comments.map { commentPair ->
+                async {
+
+                    addComment(
+                        commentPair.second.comment,
+                        commentPair.second.commentRich,
+                        commentPair.second.mentions ?: emptyList(),
+                        false
+                    )
+                    commentPair.first?.let { pointRepository.deleteModifiedFieldById(it) }
+
+                }
+            }.awaitAll()
+
+        }
+    }
+
+    fun updateReaction(comment: CommentDomain, shouldAdd: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            addReaction(reaction, shouldAdd)
+            val uuid: String = UUID.randomUUID().toString()
+            val oldReaction = comment.reactions
+            val newReaction =
+                if (comment.reactions != null) {
+                    val oldLikes = ArrayList(comment.reactions.like)
+
+                    if (!shouldAdd) {
+                        oldLikes.add(_user.value.id)
+                    } else {
+                        oldLikes.remove(_user.value.id)
+
+                    }
+                    oldReaction.like = oldLikes
+                    oldReaction
+                } else Reaction(
+                    id = uuid,
+                    header = Header(
+                        createdBy = CreatedBy(
+                            _user.value.username,
+                            _user.value.id,
+                            "",
+                            _user.value.imageID
+                        ),
+                        createdEpochMillis = System.currentTimeMillis(),
+                        createdUserAgent = "",
+                        updatedBy = UpdatedBy(
+                            _user.value.username,
+                            _user.value.id,
+                            _user.value.imageID,
+                            ""
+                        ),
+                        updatedEpochMillis = System.currentTimeMillis(),
+                        updatedUserAgent = ""
+                    ),
+                    like = if (!shouldAdd) listOf(_user.value.id) else emptyList(),
+                    tags = emptyList(),
+                    targetRef = TargetRef(
+                        type = "",
+                        caption = "",
+                        id = comment.id
+                    ),
+                    type = "",
+                    commentId = comment.id
+
+                )
+            addReaction(newReaction, shouldAdd)
         }
     }
 
@@ -894,12 +1101,13 @@ class PointDetailViewModel @Inject constructor(
     }
 
     suspend fun saveOfflineReaction(reaction: Reaction) {
-        val convertedValue = convertToOfflineFieldValue(reaction)
+        val convertedValue = reaction.convertToOfflineFieldValue()
         pointRepository.insertModifiedField(
             OfflineModifiedPointFields(
                 workspaceId = _workspaceID.value ?: "",
                 pointId = _pointID.value,
-                field = DefectFieldType.REACTION,
+                field = reaction.id,
+                type = DefectFieldType.REACTION,
                 value = convertedValue
             )
         )
@@ -909,5 +1117,615 @@ class PointDetailViewModel @Inject constructor(
 
 
     }
+
+    fun addNewComment(
+        comment: String,
+        richComment: String,
+        mentions: List<String>,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _mainLoader.value = true
+            addComment(comment, richComment, mentions)
+            _mainLoader.value = false
+
+        }
+
+    }
+
+    suspend fun addComment(
+        comment: String,
+        richComment: String,
+        mentions: List<String>,
+        shouldSaveLocally: Boolean = true
+    ) {
+
+
+        try {
+            val user = dataStoreRepository.getUser()
+            val point = _point.value
+
+            user?.let {
+                val commentRequest = AddCommentRequest(
+                    comment = comment,
+                    commentRich = richComment,
+                    mentions = mentions,
+                    author = it,
+                    defectRef = DefectRef(
+                        caption = point.title,
+                        id = point.id,
+                        type = "DefectType",
+                    ),
+                    workspaceRef = WorkspaceRef(
+                        id = _workspaceID.value ?: "",
+                        type = "WorkspaceRef",
+                        caption = ""
+                    )
+                )
+
+                if (NetworkUtil.isInternetAvailable(context)) {
+                    hitCommentEndPoint(point.id, commentRequest, shouldSaveLocally)
+                } else {
+                    if (shouldSaveLocally) {
+                        saveOfflineComment(commentRequest.toDomain())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "addComment: ", e)
+        }
+
+
+    }
+
+    suspend fun hitCommentEndPoint(
+        pointId: String,
+        commentRequest: AddCommentRequest,
+        shouldSaveLocally: Boolean = true
+    ) {
+        val result = commentRepository.addComment(pointId, commentRequest)
+
+        when (result) {
+            is Resource.Error -> {
+                if (shouldSaveLocally) {
+                    saveOfflineComment(commentRequest.toDomain())
+                }
+                _error.value = result.apiException.message ?: "Unknown Error"
+            }
+
+            Resource.Loading -> {
+
+            }
+
+            is Resource.Success<ApiResponse<Comment>> -> {
+
+                val comment = result.data.entity
+                if (comment != null) {
+                    commentLocalRepository.insertComment(comment.toEntity())
+                    refreshPoint()
+                } else {
+                    if (shouldSaveLocally) {
+                        saveOfflineComment(commentRequest.toDomain())
+                    }
+                    _error.value = "Unknown Error"
+
+                }
+            }
+        }
+    }
+
+    suspend fun saveOfflineComment(comment: CommentDomain) {
+        val convertedValue = comment.convertToOfflineFieldValue()
+        pointRepository.insertModifiedField(
+            OfflineModifiedPointFields(
+                workspaceId = _workspaceID.value ?: "",
+                pointId = _pointID.value,
+                field = comment.id,
+                type = DefectFieldType.COMMENT,
+                value = convertedValue,
+            )
+        )
+        commentLocalRepository.insertComment(comment.toEntity())
+        refreshPoint()
+
+
+    }
+
+    fun shouldSaveImageTOExternalStorage(flag: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStoreRepository.putBoolean(SAVE_IMAGE_TO_EXTERNAL_STORAGE, flag)
+        }
+    }
+
+    fun shouldSaveVideoTOExternalStorage(flag: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStoreRepository.putBoolean(SAVE_VIDEO_TO_EXTERNAL_STORAGE, flag)
+        }
+    }
+
+    suspend fun shouldSaveImageToExternalStorage(): Boolean {
+        return dataStoreRepository.getBoolean(SAVE_IMAGE_TO_EXTERNAL_STORAGE)
+    }
+
+    suspend fun shouldSaveVideoToExternalStorage(): Boolean {
+        return dataStoreRepository.getBoolean(SAVE_VIDEO_TO_EXTERNAL_STORAGE)
+    }
+
+    fun handleImageResult(uris: List<Uri>) {
+        if (uris.isEmpty() || workspaceID.value == null || point.value.id.isEmpty()) {
+            _error.value = "Unable to process images"
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _mainLoader.value = true
+            try {
+                val storageUtils = InternalWorkspaceStorageUtils()
+                val newImages = mutableListOf<Pair<String, File>>()
+                var firstImageId: String? = null
+
+                uris.forEachIndexed { index, uri ->
+                    try {
+                        val imageId = UUID.randomUUID().toString()
+                        if (firstImageId == null) {
+                            firstImageId = imageId
+                        }
+
+                        // Create temporary file from URI for compressor
+                        val tempFile = File.createTempFile("temp_image_", ".jpg", context.cacheDir)
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            FileOutputStream(tempFile).use { outputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        } ?: throw Exception("Unable to read image file")
+
+                        // Compress image using zelory compressor (preserves EXIF automatically)
+                        val originalFile = storageUtils.getFileReference(
+                            workspaceID.value!!,
+                            "${workspaceID.value}/images/original/",
+                            "$imageId.jpg",
+                            context
+                        )
+
+                        // Compress with max 2048px resolution and 85% quality
+                        Compressor.compress(context, tempFile) {
+                            resolution(2048, 2048)
+                            quality(85)
+                            format(Bitmap.CompressFormat.JPEG)
+                            destination(originalFile)
+                        }
+
+                        // Create thumbnail using compressor (max 400px)
+                        val thumbnailFile = storageUtils.getFileReference(
+                            workspaceID.value!!,
+                            "${workspaceID.value}/images/thumb/",
+                            "$imageId.jpg",
+                            context
+                        )
+
+                        Compressor.compress(context, tempFile) {
+                            resolution(400, 400)
+                            quality(90)
+                            format(Bitmap.CompressFormat.JPEG)
+                            destination(thumbnailFile)
+                        }
+
+                        // Clean up temporary file
+                        tempFile.delete()
+
+                        val localImage = LocalImage(
+                            id = imageId,
+                            caption = "Image ${index + 1}",
+                            type = "image",
+                            imageLocalPath = originalFile.absolutePath
+                        )
+                        newImages.add(imageId to originalFile)
+
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing image: ${e.message}", e)
+                    }
+                }
+
+                uploadImages(newImages, true)
+
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling images: ${e.message}", e)
+
+            }
+            _mainLoader.value = false
+        }
+    }
+
+    suspend fun uploadImages(newImages: List<Pair<String, File>>, shouldSaveLocally: Boolean) {
+
+        val notUploadedImageIds = arrayListOf<Pair<String, File>>()
+        coroutineScope {
+            if (NetworkUtil.isInternetAvailable(context)) {
+                val results = newImages.map { image ->
+                    async {
+                        val exifData = image.second.readExifDataAsJson()
+
+                        imageRemoteRepository.uploadPointImagesQuick(
+                            workspaceId = workspaceID.value!!,
+                            pointId = point.value.id,
+                            pointCaption = _point.value.title,
+                            caption = "Image ${image.first + 1}",
+                            exifData = exifData,
+                            imageFile = image.second
+                        )
+
+                    }
+                }.awaitAll()
+
+                results.forEachIndexed { index, result ->
+
+                    when (result) {
+                        is Resource.Error -> {
+                            notUploadedImageIds.add(newImages[index])
+
+
+                        }
+
+                        Resource.Loading -> {
+                        }
+
+                        is Resource.Success<ApiResponse<List<String>>> -> {
+                            pointRepository.deleteModifiedFieldByFieldValue(DefectFieldType.IMAGES + _point.value.id)
+                        }
+                    }
+
+                }
+                if (shouldSaveLocally) {
+                    syncPoint()
+                }
+
+                if (notUploadedImageIds.isNotEmpty() && shouldSaveLocally) {
+                    saveImageLocally(notUploadedImageIds)
+                }
+            } else {
+                if (shouldSaveLocally) {
+                    saveImageLocally(newImages)
+                }
+            }
+
+        }
+
+
+    }
+
+    suspend fun saveImageLocally(newImages: List<Pair<String, File>>) {
+        val point = _point.value
+
+        val offlineImages = arrayListOf<LocalImage>()
+
+        newImages.forEach { image ->
+            val localImage = LocalImage(
+                caption = "Image ${image.first + 1}",
+                id = image.first,
+                type = "image",
+                imageLocalPath = image.second.absolutePath
+            )
+            point.images.add(localImage)
+            offlineImages.add(localImage)
+        }
+        val updatedPoint = point.copy(
+            images = point.images,
+            isModified = true
+        )
+        val convertedValue = offlineImages.convertToOfflineFieldValue()
+        pointRepository.insertModifiedField(
+            OfflineModifiedPointFields(
+                workspaceId = _workspaceID.value ?: "",
+                pointId = _pointID.value,
+                field = DefectFieldType.IMAGES + _pointID.value,
+                type = DefectFieldType.IMAGES,
+                value = convertedValue,
+            )
+        )
+        pointRepository.insertPoint(updatedPoint)
+        refreshPoint()
+    }
+
+    fun handleVideoResult(uris: List<Uri>) {
+        if (uris.isEmpty() || workspaceID.value == null || point.value.id.isEmpty()) {
+            _error.value = "Unable to process videos"
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _mainLoader.value = true
+            try {
+                val storageUtils = InternalWorkspaceStorageUtils()
+                val newVideos = mutableListOf<Pair<String, File>>()
+
+                uris.forEachIndexed { index, uri ->
+                    try {
+                        val videoId = UUID.randomUUID().toString()
+                        
+                        // Copy URI to temp file for VideoCompressor (library needs File, not URI)
+                        // Use external files directory which is more accessible to native code
+                        val tempDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES) 
+                            ?: context.filesDir
+                        val tempVideoFile = File.createTempFile("temp_video_", ".mp4", tempDir)
+                        Log.d(TAG, "Created temp file: ${tempVideoFile.absolutePath}")
+                        
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            FileOutputStream(tempVideoFile).use { outputStream ->
+                                inputStream.copyTo(outputStream)
+                                outputStream.flush()
+                            }
+                        } ?: throw Exception("Unable to read video file")
+
+                        // Verify file was written correctly
+                        if (!tempVideoFile.exists() || tempVideoFile.length() == 0L) {
+                            throw Exception("Video file is invalid after copying")
+                        }
+                        
+                        Log.d(TAG, "Temp file created. Size: ${tempVideoFile.length()} bytes, Path: ${tempVideoFile.absolutePath}")
+                        
+                        // Ensure file is fully written and accessible
+                        tempVideoFile.setReadable(true, false)
+                        tempVideoFile.setWritable(true, false)
+                        
+                        // Small delay to ensure file system has synced
+                        delay(100)
+                        
+                        // Double-check file is still accessible
+                        if (!tempVideoFile.exists() || !tempVideoFile.canRead()) {
+                            throw Exception("Video file became inaccessible after creation")
+                        }
+                        
+                        // Create output file for compressed video (use same directory as input)
+                        val compressedFile = File.createTempFile("compressed_$videoId", ".mp4", tempDir)
+                        compressedFile.setWritable(true, false)
+                        
+                        // Compress video using VideoCompressor
+                        try {
+                            Log.d(TAG, "Starting video compression. Input file: ${tempVideoFile.absolutePath}, exists: ${tempVideoFile.exists()}, readable: ${tempVideoFile.canRead()}")
+                            
+                            // Final verification before compression
+                            if (!tempVideoFile.exists()) {
+                                throw Exception("Input video file does not exist")
+                            }
+                            
+                            if (!tempVideoFile.canRead()) {
+                                throw Exception("Input video file is not readable")
+                            }
+                            
+                            if (tempVideoFile.length() == 0L) {
+                                throw Exception("Input video file is empty")
+                            }
+                            
+                            // Use VideoCompressor with File (library requirement)
+                            VideoCompressor.compress(
+                                context = context,
+                                input = tempVideoFile,  // Use File as library requires
+                                output = compressedFile,
+                                onMetadataDecoded = { compressor, metadata ->
+                                    try {
+                                        Log.d(TAG, "Metadata decoded. Original dimensions: ${metadata.actualWidth}x${metadata.actualHeight}")
+                                        
+                                        // Calculate target size (half of original, but ensure even numbers)
+                                        // MediaCodec requires even dimensions
+                                        var targetWidth = (metadata.actualWidth / 2)
+                                        var targetHeight = (metadata.actualHeight / 2)
+                                        
+                                        // Ensure dimensions are even (required by MediaCodec)
+                                        if (targetWidth % 2 != 0) targetWidth--
+                                        if (targetHeight % 2 != 0) targetHeight--
+                                        
+                                        // Constrain to reasonable limits
+                                        targetWidth = targetWidth.coerceIn(320, 1920)
+                                        targetHeight = targetHeight.coerceIn(240, 1080)
+                                        
+                                        // Ensure still even after constraining
+                                        if (targetWidth % 2 != 0) targetWidth--
+                                        if (targetHeight % 2 != 0) targetHeight--
+                                        
+                                        Log.d(TAG, "Target compression dimensions: ${targetWidth}x${targetHeight}")
+                                        
+                                        // Build compression settings
+                                        CompressionSettings.Builder()
+                                            .setTargetSize(
+                                                width = targetWidth,
+                                                height = targetHeight
+                                            )
+                                            .setBitrate(2_000_000)
+                                            .setStreamable(true)
+                                            .allowSizeAdjustments(true)
+                                            .setEncoderSelectionMode(EncoderSelectionMode.TRY_ALL)
+                                            .build()
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error in onMetadataDecoded: ${e.message}", e)
+                                        // Fallback to safe default settings
+                                        CompressionSettings.Builder()
+                                            .setTargetSize(width = 1280, height = 720)
+                                            .setBitrate(2_000_000)
+                                            .setStreamable(true)
+                                            .allowSizeAdjustments(true)
+                                            .setEncoderSelectionMode(EncoderSelectionMode.TRY_ALL)
+                                            .build()
+                                    }
+                                }
+                            )
+                            
+                            // Wait longer for compression to complete (compression can take time)
+                            var attempts = 0
+                            while (attempts < 40 && (!compressedFile.exists() || compressedFile.length() == 0L)) {
+                                delay(500)
+                                attempts++
+                            }
+                            
+                            // Verify the compressed file was created and has content
+                            if (!compressedFile.exists()) {
+                                throw Exception("Video compression failed: Output file was not created after ${attempts * 500}ms")
+                            }
+                            
+                            if (compressedFile.length() == 0L) {
+                                throw Exception("Video compression failed: Output file is empty")
+                            }
+                            
+                            Log.d(TAG, "Video compression successful. Compressed: ${compressedFile.length()} bytes")
+                            
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Video compression error: ${e.message}", e)
+                            e.printStackTrace()
+                            // Clean up failed output file
+                            if (compressedFile.exists()) {
+                                compressedFile.delete()
+                            }
+                            throw Exception("Video compression failed: ${e.message ?: "Unknown error"}")
+                        }
+                        
+                        // Save compressed video to storage
+                        val originalFile = videoStore.getOriginalFileReference(_workspaceID.value!!,videoId)
+                        originalFile.parentFile?.mkdirs()
+                        compressedFile.copyTo(originalFile, overwrite = true)
+                        
+                        // Clean up temporary files
+                        tempVideoFile.delete()
+                        compressedFile.delete()
+                        
+                        newVideos.add(videoId to originalFile)
+                        
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing video ${index + 1}: ${e.message}", e)
+                    }
+                }
+
+                if (newVideos.isNotEmpty()) {
+                    uploadVideos(newVideos, true)
+                } else {
+                    _error.value = "No videos were successfully processed"
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling videos: ${e.message}", e)
+                _error.value = "Error processing videos: ${e.message}"
+            }
+            _mainLoader.value = false
+        }
+    }
+
+    private fun getRealPathFromURI(uri: Uri): String? {
+        // On modern Android versions, _data column is not available due to scoped storage
+        // This method is kept for backward compatibility but may return null
+        var result: String? = null
+        when {
+            uri.scheme == "file" -> {
+                result = uri.path
+            }
+            uri.scheme == "content" -> {
+                // Try to get path, but don't throw if column doesn't exist
+                try {
+                    val projection = arrayOf(MediaStore.Video.Media.DATA)
+                    val cursor = context.contentResolver.query(uri, projection, null, null, null)
+                    cursor?.use {
+                        if (it.moveToFirst()) {
+                            val columnIndex = it.getColumnIndex(MediaStore.Video.Media.DATA)
+                            if (columnIndex >= 0) {
+                                result = it.getString(columnIndex)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Column doesn't exist or other error - return null
+                    Log.d(TAG, "Could not get path from URI: ${e.message}")
+                }
+            }
+        }
+        return result
+    }
+
+    suspend fun uploadVideos(newVideos: List<Pair<String, File>>, shouldSaveLocally: Boolean) {
+        val notUploadedVideoIds = arrayListOf<Pair<String, File>>()
+        coroutineScope {
+            if (NetworkUtil.isInternetAvailable(context)) {
+                val results = newVideos.map { video ->
+                    async {
+                        videoRemoteRepository.uploadVideo(
+                            workspaceId = workspaceID.value!!,
+                            pointId = point.value.id,
+                            pointCaption = _point.value.title,
+                            videoFile = video.second
+                        )
+                    }
+                }.awaitAll()
+
+                results.forEachIndexed { index, result ->
+                    when (result) {
+                        is Resource.Error -> {
+                            notUploadedVideoIds.add(newVideos[index])
+                            Log.e(TAG, "Error uploading video: ${result.apiException.message}")
+                        }
+
+                        Resource.Loading -> {
+                            // Loading state
+                        }
+
+                        is Resource.Success<ApiResponse<Video>> -> {
+                            val uploadedVideo = result.data.entity
+                            if (uploadedVideo != null) {
+                                // Video uploaded successfully
+                                Log.d(TAG, "Video uploaded successfully: ${uploadedVideo.id}")
+                                // Delete the modified field if it exists
+                                pointRepository.deleteModifiedFieldByFieldValue(
+                                    DefectFieldType.VIDEOS +_pointID.value
+                                )
+                            } else {
+                                notUploadedVideoIds.add(newVideos[index])
+                            }
+                        }
+                    }
+                }
+                if (shouldSaveLocally) {
+                    syncPoint()
+                }
+
+                if (notUploadedVideoIds.isNotEmpty() && shouldSaveLocally) {
+                    saveVideoLocally(notUploadedVideoIds)
+                }
+            } else {
+                if (shouldSaveLocally) {
+                    saveVideoLocally(newVideos)
+                }
+            }
+        }
+    }
+
+    suspend fun saveVideoLocally(newVideos: List<Pair<String, File>>) {
+        val point = _point.value
+        val offlineVideos = arrayListOf<Video>()
+
+        newVideos.forEachIndexed { index, video ->
+            val localVideo = Video(
+                caption = "Video ${index + 1}",
+                id = video.first,
+                type = "video"
+            )
+            point.videos.add(localVideo)
+            offlineVideos.add(localVideo)
+        }
+        
+        val updatedPoint = point.copy(
+            videos = point.videos,
+            isModified = true
+        )
+        
+        // Convert videos to offline field value
+        val convertedValue = offlineVideos.convertToOfflineFieldValue()
+        pointRepository.insertModifiedField(
+            OfflineModifiedPointFields(
+                workspaceId = _workspaceID.value ?: "",
+                pointId = _pointID.value,
+                field = DefectFieldType.VIDEOS + _pointID.value,
+                type = DefectFieldType.VIDEOS+ _pointID.value,
+                value = convertedValue,
+            )
+        )
+        pointRepository.insertPoint(updatedPoint)
+        refreshPoint()
+    }
+
 
 }

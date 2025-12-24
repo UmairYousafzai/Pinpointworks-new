@@ -1,5 +1,6 @@
 package com.sleetworks.serenity.android.newone.data.datasource.remote
 
+import com.sleetworks.serenity.android.newone.data.models.remote.request.AddCommentRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
@@ -9,20 +10,25 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.commen
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
 import com.sleetworks.serenity.android.newone.data.models.remote.response.updatedPoint.UpdatedPoint
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
+import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Headers
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -100,10 +106,10 @@ interface ApiService {
 
     /////////// comment  //////////////
 
-    @POST("comments/points/{id}")
+    @POST("v1/comments/points/{id}")
     suspend fun addComment(
         @Path("id") pointId: String,
-        @Body comment: Comment
+        @Body comment: AddCommentRequest
 
     ): Response<ApiResponse<Comment>>
 
@@ -123,11 +129,32 @@ interface ApiService {
     @GET("v1/reactions/points/{pointId}")
     suspend fun getPointCommentReactions(@Path("pointId") pointId: String): Response<ApiResponse<List<Reaction>>>
 
-        @POST("v1/reactions/comments/{defectId}/like")
+    @POST("v1/reactions/comments/{defectId}/like")
     suspend fun addReaction(
         @Path("defectId") commentId: String,
         @Query("remove") remove: Boolean
     ): Response<ApiResponse<Reaction>>
+
+
+    /* *********************************** Sites ******************/
+    @GET("v1/video/{videoId}/file")
+    suspend fun downloadVideo(@Path("videoId") videoID: String): Response<ResponseBody>
+
+    @DELETE("v1/video/{id}")
+    suspend fun removeVideo(
+        @Path("id") id: String,
+        @Query("pointId") pointId: String
+    ): Response<ApiResponse<String>>
+
+    @Multipart
+    @POST("v1/video/{workspaceId}?updatePoint=true")
+    suspend fun uploadVideo(
+        @Part("itemRefId") itemRefId: RequestBody,
+        @Part("itemRefType") itemRefType: RequestBody,
+        @Part("itemRefCaption") itemRefCaption: RequestBody,
+        @Path("workspaceId") workspaceId: String,
+        @Part imageFile: MultipartBody.Part
+    ): Response<ApiResponse<Video>>
 
     //
 //    @POST("points")
@@ -151,7 +178,10 @@ interface ApiService {
 //        @Query("workspaceId") spaceId: String
 //    ): Call<ApiResponse<DefectType>>
 //
-//    /* *********************************** Sites ******************/
+    /* *********************************** Sites ******************/
+    //    @GET("/api/v1/video/{videoId}/file")
+//    fun downloadVideo(@Path("videoId") videoID: String): Call<ResponseBody>
+    /* *********************************** Sites ******************/
 //    @GET("site")
 //    fun getAllSites(): Call<ApiResponse<List<Site>>>
 //
@@ -208,6 +238,23 @@ interface ApiService {
 
     @GET("v1/images/{imageId}/file/size/bounded/1200")
     suspend fun downloadImageLargeSize(@Path("imageId") imageId: String): Response<ResponseBody>
+
+    @DELETE("v1/images/{id}")
+    suspend fun removeImage(
+        @Path("id") imageId: String,
+        @Query("pointId") pointId: String
+    ): Response<Unit>
+
+    @Multipart
+    @POST("v1/images/{workspaceId}?updatePoint=true")
+    suspend fun uploadPointImage(
+        @Part("exif") exif: RequestBody?,
+        @Part("itemRefId") itemRefId: RequestBody,
+        @Part("itemRefType") itemRefType: RequestBody,
+        @Part("itemRefCaption") itemRefCaption: RequestBody,
+        @Path("workspaceId") workspaceId: String,
+        @Part imageFile: MultipartBody.Part
+    ): Response<ApiResponse<List<String>>>
 //
 //    @GET("images/itemref/{id}")
 //    fun getImageListForPoint(@Path("id") pointId: String): Call<ApiResponse<List<Image>>>
@@ -226,11 +273,7 @@ interface ApiService {
 //        @Query("pointId") pointId: String
 //    ): Call<ApiResponse<String>>
 //
-//    @DELETE("video/{id}")
-//    fun removeVideo(
-//        @Path("id") id: String,
-//        @Query("pointId") pointId: String
-//    ): Call<ApiResponse<String>>
+
 //
 //    @Multipart
 //    @POST("images/{workspaceId}")
@@ -244,16 +287,7 @@ interface ApiService {
 //        @Query("updatePoint") isQuick: Boolean
 //    ): Call<ApiResponse<List<String>>>
 //
-//    @Multipart
-//    @POST("images/{workspaceId}?updatePoint=true")
-//    fun uploadImageFileQuick(
-//        @Part("exif") exif: RequestBody,
-//        @Part("itemRefId") itemRefId: RequestBody,
-//        @Part("itemRefType") itemRefType: RequestBody,
-//        @Part("itemRefCaption") itemRefCaption: RequestBody,
-//        @Path("workspaceId") workspaceId: String,
-//        @Part imageFile: MultipartBody.Part
-//    ): Call<ApiResponse<List<String>>>
+
 //
 //    @Multipart
 //    @POST("images/{workspaceId}/multiple")

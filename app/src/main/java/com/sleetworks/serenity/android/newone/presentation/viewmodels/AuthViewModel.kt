@@ -5,18 +5,18 @@ import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
-import com.sleetworks.serenity.android.newone.BuildConfig
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
 import com.sleetworks.serenity.android.newone.data.models.remote.request.LoggedRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.LoginResponse
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.network.ApiException
 import com.sleetworks.serenity.android.newone.data.network.Resource
-import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
-import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
 import com.sleetworks.serenity.android.newone.utils.AUTH_TOKEN
@@ -26,8 +26,6 @@ import com.sleetworks.serenity.android.newone.utils.IS_LOGIN
 import com.sleetworks.serenity.android.newone.utils.USER_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -143,6 +141,7 @@ class AuthViewModel @Inject constructor(
 
     fun login(email: String, password: String, baseUrl: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
+            Log.e("First Sync", "Sync Start")
 
             try {
                 _loader.emit(Pair("Logging in", true))
@@ -162,7 +161,7 @@ class AuthViewModel @Inject constructor(
                             result.data.error?.let { _tfaNumber.emit(it) }
                         } else {
 
-                            storeTokenAndEmail(response.user,response.authToken)
+                            storeTokenAndEmail(response.user, response.authToken)
                             setupEnvironment(response, password)
 
                             Log.d(TAG, "login: store info")
@@ -223,6 +222,7 @@ class AuthViewModel @Inject constructor(
                 }
                 result.data.entity?.user?.let {
 //                    userRepository.insertUser(it.toEntity())
+                    storeUser(it)
                     storeUserData(
                         UserPreference(
                             it.id,
@@ -265,54 +265,55 @@ class AuthViewModel @Inject constructor(
     }
 
     fun checkUserExists(email: String, password: String) {
+        login(email, password, "https://dev.pinpointworks.com/")
 
-        viewModelScope.launch {
-            clearAuthURls()
-            if (!isEmailAndPasswordValid(email, password)) {
-                return@launch
-            }
-
-            _loader.emit(Pair("Checking user", true))
-            val urls = (BuildConfig.URL_ARRAY).toList()
-            val authURls = mutableListOf<String>()
-
-            val results = urls.map { url ->
-                async(Dispatchers.IO) { url to authRemoteRepository.checkIfUserExists(email, url) }
-            }.awaitAll()
-
-            results.forEach { (url, result) ->
-                when (result) {
-                    is Resource.Success -> {
-                        authURls.add(url)
-                    }
-
-                    is Resource.Error -> {
-                        Log.d(TAG, "checkUserExists: ", result.apiException)
-                        var message = ""
-
-                        if (result.apiException is ApiException.NetworkException) {
-                            message = result.apiException.message ?: "Unexpected error"
-                        }
-
-                        _error.emit(message)
-
-
-                    }
-
-                    Resource.Loading -> {
-                        // optional: handle loading state per call if needed
-                    }
-                }
-            }
-            _loader.emit(Pair("", false))
-            if (authURls.size == 1) {
-                login(email, password, authURls[0])
-            } else if (authURls.size > 1) {
-                _authenticatedURLS.emit(authURls as ArrayList<String>)
-            } else {
-                _error.emit("User does not exists")
-            }
-        }
+//        viewModelScope.launch {
+//            clearAuthURls()
+//            if (!isEmailAndPasswordValid(email, password)) {
+//                return@launch
+//            }
+//
+//            _loader.emit(Pair("Checking user", true))
+//            val urls = (BuildConfig.URL_ARRAY).toList()
+//            val authURls = mutableListOf<String>()
+//
+//            val results = urls.map { url ->
+//                async(Dispatchers.IO) { url to authRemoteRepository.checkIfUserExists(email, url) }
+//            }.awaitAll()
+//
+//            results.forEach { (url, result) ->
+//                when (result) {
+//                    is Resource.Success -> {
+//                        authURls.add(url)
+//                    }
+//
+//                    is Resource.Error -> {
+//                        Log.d(TAG, "checkUserExists: ", result.apiException)
+//                        var message = ""
+//
+//                        if (result.apiException is ApiException.NetworkException) {
+//                            message = result.apiException.message ?: "Unexpected error"
+//                        }
+//
+//                        _error.emit(message)
+//
+//
+//                    }
+//
+//                    Resource.Loading -> {
+//                        // optional: handle loading state per call if needed
+//                    }
+//                }
+//            }
+//            _loader.emit(Pair("", false))
+//            if (authURls.size == 1) {
+//                login(email, password, authURls[0])
+//            } else if (authURls.size > 1) {
+//                _authenticatedURLS.emit(authURls as ArrayList<String>)
+//            } else {
+//                _error.emit("User does not exists")
+//            }
+//        }
 
 
     }
@@ -321,6 +322,15 @@ class AuthViewModel @Inject constructor(
     suspend fun storeUserData(user: UserPreference) {
 
         dataStoreRepository.saveUserInfo(
+            user
+        )
+
+    }
+
+
+    suspend fun storeUser(user: User) {
+
+        dataStoreRepository.saveUser(
             user
         )
 

@@ -15,6 +15,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.customF
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
+import com.sleetworks.serenity.android.newone.data.models.remote.request.AddCommentRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
@@ -27,8 +28,10 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.Share
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
+import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
+import java.util.UUID
 
 fun Assignee.toEntity(workspaceID: String): AssigneeEntity {
     return AssigneeEntity(
@@ -183,7 +186,9 @@ fun Point.toEntity(): PointEntity {
         videos = this.videos ?: arrayListOf(),
         workspaceRef = if (!this.workspaceRef.caption.isNullOrEmpty()) this.workspaceRef else WorkspaceRef(
             "",
-            this.workspaceRef.id
+            this.workspaceRef.id,
+            type = ""
+
         ),
         isModified = false,
         edited = this.edited ?: true,
@@ -264,9 +269,11 @@ fun Comment.toEntity(): CommentEntity {
         tags = this.tags,
         totalBytes = this.totalBytes,
         type = this.type,
-        workspaceRef = this.workspaceRef
+        workspaceRef = this.workspaceRef,
+        addedTime = 0,
+        author = null,
 
-    )
+        )
 }
 
 fun Reaction.toEntity(): ReactionEntity {
@@ -293,7 +300,7 @@ fun ReactionEntity.toModel(): Reaction {
     )
 }
 
-fun PointDomain.toInsertPoint(): InsertPoint{
+fun PointDomain.toInsertPoint(): InsertPoint {
     return InsertPoint(
         point = this.toEntity(),
         tags = this.tags?.map {
@@ -302,11 +309,12 @@ fun PointDomain.toInsertPoint(): InsertPoint{
             )
         } as ArrayList<PointTagEntity> ?: arrayListOf(),
 
-        assignees =assignees as List<PointAssigneeEntity>,
+        assignees = assignees as List<PointAssigneeEntity>,
         customFields = customFieldSimplyList as List<PointCustomFieldEntity>
     )
 }
-fun PointDomain.toEntity(): PointEntity{
+
+fun PointDomain.toEntity(): PointEntity {
 
     return PointEntity(
         id = this.id,
@@ -329,8 +337,73 @@ fun PointDomain.toEntity(): PointEntity{
         status = this.status ?: "",
         title = this.title ?: "",
         videos = this.videos ?: arrayListOf(),
-        workspaceRef =this.workspaceRef,
+        workspaceRef = this.workspaceRef,
 
+        )
+}
+
+fun AddCommentRequest.toDomain(): CommentDomain {
+    val uuid: String = UUID.randomUUID().toString()
+    return CommentDomain(
+        id = uuid,
+        comment = this.comment,
+        commentRich = this.commentRich,
+        defectRef = this.defectRef,
+        header = null,
+        tags = emptyList(),
+        totalBytes = 0,
+        type = "",
+        workspaceRef = this.workspaceRef,
+        addedTime = System.currentTimeMillis(),
+        mentions = mentions,
+        reactions = null,
+        author = author
+    )
+}
+
+fun CommentDomain.toEntity(): CommentEntity {
+    return CommentEntity(
+        id = this.id,
+        comment = this.comment,
+        commentRich = this.commentRich,
+        defectRef = this.defectRef,
+        header = null,
+        tags = emptyList(),
+        totalBytes = 0,
+        type = "",
+        workspaceRef = this.workspaceRef,
+        addedTime = addedTime,
+        author = this.author
+    )
+}
+
+fun PointEntity.toDomain(): PointDomain {
+    return PointDomain(
+        id = this.id,
+        isModified = this.isModified,
+        edited = this.edited,
+        updatedAt = this.updatedAt,
+        description = this.description,
+        descriptionRich = this.descriptionRich,
+        documents = this.documents,
+        flagged = this.flagged,
+        header = this.header,
+        images = this.images,
+        images360 = this.images360,
+        pins = this.pins,
+        polygons = this.polygons,
+        priority = this.priority,
+        sequenceNumber = this.sequenceNumber,
+        status = this.status,
+        title = this.title,
+        videos = this.videos,
+        workspaceRef = this.workspaceRef,
+        assignees = arrayListOf(),
+        customFieldSimplyList = arrayListOf(),
+        tags = arrayListOf(),
+        assigneeIds = arrayListOf(),
+        comments = arrayListOf(),
+        localId = this.localID,
         )
 }
 

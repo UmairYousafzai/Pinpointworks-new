@@ -11,7 +11,10 @@ import com.sleetworks.serenity.android.newone.presentation.ui.screens.RichTextEd
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.LoginScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.SyncScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.defectList.DefectListScreen
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.photo.EditPhotoScreen
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.photo.PhotoViewScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDetail.DefectDetailScreen
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.video.VideoPlayerScreen
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.SharedViewModel
 
 @Composable
@@ -70,11 +73,59 @@ fun Navigation(
                     defaultValue = ""
                 },
 
-                navArgument("initialValue") { type = NavType.StringType }
+                navArgument("initialValue") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
             )
 
         ) { backStackEntry ->
             RichTextEditorScreen(navController = navController)
+        }
+
+
+        composable(
+            route = Screen.PhotoViewScreen.route + "/{currentIndex}/{pointId}",
+            arguments = listOf(
+                navArgument("currentIndex") { type = NavType.IntType },
+                navArgument("pointId") { type = NavType.StringType },
+            )
+
+        ) { backStackEntry ->
+
+            PhotoViewScreen(
+                navController,
+                sharedViewModel = sharedViewModel
+            )
+        }
+
+        composable(
+            route = Screen.EditPhotScreen.route + "/{imageId}",
+            arguments = listOf(
+                navArgument("imageId") { type = NavType.StringType },
+            )
+
+        ) { backStackEntry ->
+
+            EditPhotoScreen(
+                navController,
+                sharedViewModel = sharedViewModel
+            )
+        }
+
+        composable(
+            route = Screen.VideoPlayerScreen.route + "/{videoId}/{pointId}",
+            arguments = listOf(
+                navArgument("videoId") { type = NavType.StringType },
+                navArgument("pointId") { type = NavType.StringType },
+            )
+
+        ) { backStackEntry ->
+
+            VideoPlayerScreen(
+                navController,
+                sharedViewModel = sharedViewModel
+            )
         }
 
 //        composable(

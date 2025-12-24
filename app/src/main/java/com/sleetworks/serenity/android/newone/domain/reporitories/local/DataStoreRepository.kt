@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.domain.reporitories.local
 
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -22,4 +23,7 @@ interface DataStoreRepository {
     suspend fun getInt(key: String): Int?
     suspend fun getLong(key: String): Long?
     suspend fun clearData()
-    suspend fun saveUserInfo(user: UserPreference)}
+    suspend fun saveUserInfo(user: UserPreference)
+    suspend fun saveUser(user: User)
+    suspend fun getUser(): User?
+}

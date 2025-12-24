@@ -6,6 +6,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRep
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncImageUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointImageUseCase
+import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointOriginalImageUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,11 +37,22 @@ object UseCaseModule {
   @Provides
     @ViewModelScoped
     fun provideSyncPointImageUseCase(
-
         imageRepository: ImageRemoteRepository,
         userImageStore: UserImageStore
     ): SyncPointImageUseCase {
         return SyncPointImageUseCase(
+            imageRepository = imageRepository,
+            userImageStore = userImageStore
+        )
+    }
+
+  @Provides
+    @ViewModelScoped
+    fun provideSyncPointOriginalImageUseCase(
+        imageRepository: ImageRemoteRepository,
+        userImageStore: UserImageStore
+    ): SyncPointOriginalImageUseCase {
+        return SyncPointOriginalImageUseCase(
             imageRepository = imageRepository,
             userImageStore = userImageStore
         )

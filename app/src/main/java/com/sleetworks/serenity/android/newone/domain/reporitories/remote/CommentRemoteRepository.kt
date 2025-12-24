@@ -1,11 +1,17 @@
 package com.sleetworks.serenity.android.newone.domain.reporitories.remote
 
+import com.sleetworks.serenity.android.newone.data.models.remote.request.AddCommentRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.network.Resource
 
 interface CommentRemoteRepository {
+    suspend fun addComment(
+        pointId: String,
+        commentRequest: AddCommentRequest
+    ): Resource<ApiResponse<Comment>>
+
     suspend fun getPointComments(
         pointId: String
     ): Resource<ApiResponse<List<Comment>>>

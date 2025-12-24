@@ -10,6 +10,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.customF
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.CreatedBy
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UpdatedBy
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Document
@@ -19,6 +20,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.point.
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.customfield.SubListOfTotal
+import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 
 class PointConverters {
@@ -135,6 +137,9 @@ class PointConverters {
             is OfflineFieldValue.DoubleValue -> "DoubleValue"
             is OfflineFieldValue.NewCustomFieldValue -> "NewCustomFieldValue"
             is OfflineFieldValue.CommentReactionValue -> "CommentReactionValue"
+            is OfflineFieldValue.CommentValue -> "CommentValue"
+            is OfflineFieldValue.ImageListValue -> "ImageListValue"
+            is OfflineFieldValue.VideoListValue -> "VideoListValue"
         }
 
         val wrapper = mapOf(
@@ -172,8 +177,15 @@ class PointConverters {
                 "IntValue" -> OfflineFieldValue.IntValue(actualValue?.asInt ?: 0)
                 "CommentReactionValue" -> OfflineFieldValue.CommentReactionValue(
                     gson.fromJson(
-                        actualValue ,
+                        actualValue,
                         Reaction::class.java
+                    )
+                )
+
+                "CommentValue" -> OfflineFieldValue.CommentValue(
+                    gson.fromJson(
+                        actualValue,
+                        CommentDomain::class.java
                     )
                 )
 
@@ -194,6 +206,45 @@ class PointConverters {
                         ) ?: emptyList()
                     }
                     OfflineFieldValue.NewCustomFieldValue(list)
+
+                }
+
+                "ImageListValue" -> {
+                    val list = if (actualValue?.isJsonArray == true) {
+                        actualValue.asJsonArray.mapNotNull {
+                            gson.fromJson(
+                                it,
+                                LocalImage::class.java
+                            )
+                        }
+                    } else {
+                        // Fallback: try parsing as string
+                        val listJson = actualValue?.toString() ?: "[]"
+                        gson.fromJson<List<LocalImage>>(
+                            listJson,
+                            object : TypeToken<List<LocalImage>>() {}.type
+                        ) ?: emptyList()
+                    }
+                    OfflineFieldValue.ImageListValue(list)
+
+                }
+                "VideoListValue" -> {
+                    val list = if (actualValue?.isJsonArray == true) {
+                        actualValue.asJsonArray.mapNotNull {
+                            gson.fromJson(
+                                it,
+                                Video::class.java
+                            )
+                        }
+                    } else {
+                        // Fallback: try parsing as string
+                        val listJson = actualValue?.toString() ?: "[]"
+                        gson.fromJson<List<Video>>(
+                            listJson,
+                            object : TypeToken<List<Video>>() {}.type
+                        ) ?: emptyList()
+                    }
+                    OfflineFieldValue.VideoListValue(list)
 
                 }
 
@@ -219,4 +270,10 @@ class PointConverters {
     fun toSubListOfTotal(value: String?): List<SubListOfTotal>? =
         value?.let { gson.fromJson(it, object : TypeToken<List<SubListOfTotal>>() {}.type) }
 
+    @TypeConverter
+    fun fromUser(user: User?): String? = gson.toJson(user)
+
+    @TypeConverter
+    fun toUser(value: String?): User? =
+        value?.let { gson.fromJson(it, User::class.java) }
 }

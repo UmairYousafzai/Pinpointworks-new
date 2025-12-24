@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.DefectRef
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.WorkspaceRef
 
@@ -30,10 +31,12 @@ data class CommentEntity(
     val commentRich: String,
     @Embedded
     val defectRef: DefectRef,
-    val header: Header,
+    val header: Header?,
     val tags: List<String>,
     val totalBytes: Int,
     val type: String,
+    var addedTime: Long,
+    var author: User?,
     @Embedded
     val workspaceRef: WorkspaceRef
 

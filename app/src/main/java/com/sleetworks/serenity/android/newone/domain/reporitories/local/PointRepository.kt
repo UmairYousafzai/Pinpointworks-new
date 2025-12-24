@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface PointRepository {
 
+    suspend fun insertPointDetailsOnly(point: PointDomain)
     suspend fun insertPoint(point: Point)
     suspend fun insertPoint(point: PointDomain)
     suspend fun insertPoints(points: List<Point>)
@@ -24,4 +25,6 @@ interface PointRepository {
     suspend fun deletePointByID(pointIDs: List<String>): Int
     suspend fun deletePointByWorkspaceID(workspaceID: String): Int
     suspend fun deleteModifiedFieldByPointId(pointId: String): Int
+    suspend fun deleteModifiedFieldById(id: Int): Int
+    suspend fun deleteModifiedFieldByFieldValue(value: String): Int
 }

@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -67,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -1347,7 +1349,7 @@ fun ListDialogInCompose(
                     }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = {
-                        onAccept(selectedId,)
+                        onAccept(selectedId)
                         onDismissRequest()
                     }) {
                         Text("Accept")
@@ -1476,9 +1478,93 @@ fun MultiSelectListDialog(
     onClear: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val selectedIds = remember { mutableStateOf(initialSelectedIds.toSet()) }
+    val hierarchy = remember(items) { buildHierarchy(items) }
+    val textFieldColor = OutlinedTextFieldDefaults.colors(
 
-    // This is the key change: We flatten the list for search but keep the hierarchy for display.
+        focusedBorderColor = Color.Black,
+        unfocusedBorderColor = Color.Black,
+        focusedTextColor = Color.Black,
+        unfocusedTextColor = Color.Black,
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+
+        )
+    val selectedIds = remember {
+        val initialSet = initialSelectedIds.toSet()
+        val completeIds = mutableSetOf<String>()
+
+        initialSet.forEach { id ->
+            val node = hierarchy[id]
+            if (node != null) {
+                completeIds.add(id)
+
+                if (node.children.isNotEmpty()) {
+                    completeIds.addAll(getDescendantIds(node))
+                }
+
+                var parentNode = node.parent
+                while (parentNode != null) {
+                    completeIds.add(parentNode.id)
+                    parentNode = parentNode.parent
+                }
+            }
+        }
+        mutableStateOf(completeIds)
+    }
+
+    val handleItemClick = { itemId: String ->
+        val node = hierarchy[itemId]
+
+        if (node != null) {
+            val currentIds = selectedIds.value
+            val newIds = currentIds.toMutableSet()
+            val descendantIds = getDescendantIds(node)
+            val areAllDescendantsSelected =
+                descendantIds.isNotEmpty() && newIds.containsAll(descendantIds)
+
+            if (node.children.isNotEmpty()) { // It's a parent
+                if (areAllDescendantsSelected) {
+                    newIds.removeAll(descendantIds) // Deselect all children
+                } else {
+                    newIds.addAll(descendantIds) // Select all children
+                }
+            } else { // It's a leaf
+                if (newIds.contains(itemId)) {
+                    newIds.remove(itemId)
+                } else {
+                    newIds.add(itemId)
+                }
+            }
+            selectedIds.value = newIds
+        }
+    }
+
+    // This effect runs after clicks to ensure parent states are correct
+    LaunchedEffect(selectedIds.value) {
+        val currentIds = selectedIds.value
+        val newIds = currentIds.toMutableSet()
+        var changed = false
+
+        hierarchy.values.filter { it.children.isNotEmpty() }.forEach { parentNode ->
+            val descendantIds = getDescendantIds(parentNode)
+            if (descendantIds.isNotEmpty()) {
+                val allChildrenSelected = newIds.containsAll(descendantIds)
+
+                if (allChildrenSelected) {
+                    if (newIds.add(parentNode.id)) changed = true
+                } else {
+                    if (newIds.remove(parentNode.id)) changed = true
+                }
+            }
+        }
+        if (changed) {
+            // Check for equality to prevent re-triggering the LaunchedEffect
+            if (selectedIds.value != newIds) {
+                selectedIds.value = newIds
+            }
+        }
+    }
+
     val flatSearchList = remember(items) { flattenForSearch(items, "") }
     val searchResults = if (searchQuery.isNotEmpty()) {
         flatSearchList.filter { it.displayLabel.contains(searchQuery, ignoreCase = true) }
@@ -1501,6 +1587,7 @@ fun MultiSelectListDialog(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     label = { Text("Search") },
+                    colors = textFieldColor,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
@@ -1510,35 +1597,21 @@ fun MultiSelectListDialog(
                 // --- Content Area ---
                 Box(modifier = Modifier.weight(1f)) {
                     if (isSearching) {
-                        // Flat list for search results
-                        SearchListView(
+                        MultiSelectSearchListView(
                             items = searchResults,
                             selectedIds = selectedIds.value,
-                            onItemClick = { itemId ->
-                                val currentIds = selectedIds.value.toMutableSet()
-                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(
-                                    itemId
-                                )
-                                selectedIds.value = currentIds
-                            }
+                            onItemClick = handleItemClick
                         )
                     } else {
-                        // **NEW: Hierarchical list for browsing**
-                        HierarchicalListView(
+                        MultiSelectHierarchicalListView(
                             items = items,
+                            hierarchy = hierarchy,
                             selectedIds = selectedIds.value,
-                            onItemClick = { itemId ->
-                                val currentIds = selectedIds.value.toMutableSet()
-                                if (currentIds.contains(itemId)) currentIds.remove(itemId) else currentIds.add(
-                                    itemId
-                                )
-                                selectedIds.value = currentIds
-                            }
+                            onItemClick = handleItemClick
                         )
                     }
                 }
 
-                // --- Action Buttons ---
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1553,7 +1626,12 @@ fun MultiSelectListDialog(
                     TextButton(onClick = onDismissRequest) { Text("Cancel") }
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = {
-                        val finalSelectedInts = selectedIds.value.mapNotNull { it.toIntOrNull() }
+                        val allSelected = selectedIds.value
+                        val topLevelSelectedIds = allSelected.filter { id ->
+                            val node = hierarchy[id]
+                            node?.parent == null || !allSelected.contains(node.parent.id)
+                        }
+                        val finalSelectedInts = topLevelSelectedIds.mapNotNull { it.toIntOrNull() }
                         onSelectionConfirmed(finalSelectedInts)
                         onDismissRequest()
                     }) { Text("OK") }
@@ -1563,85 +1641,143 @@ fun MultiSelectListDialog(
     }
 }
 
-// --- NEW: Composable to render the nested list ---
+
+private class HierarchyNode(
+    val item: SubListItem,
+    val parent: HierarchyNode? = null,
+    val children: MutableList<HierarchyNode> = mutableListOf()
+) {
+    val id: String get() = item.id.toString()
+}
+
+// --- NEW: Helper to build the tree and a lookup map ---
+private fun buildHierarchy(items: List<SubListItem>): Map<String, HierarchyNode> {
+    val nodeMap = mutableMapOf<String, HierarchyNode>()
+
+    fun traverse(sublist: List<SubListItem>, parent: HierarchyNode?) {
+        for (item in sublist) {
+            val node = HierarchyNode(item, parent)
+            nodeMap[node.id] = node
+            parent?.children?.add(node)
+            item.subList?.let { traverse(it, node) }
+        }
+    }
+
+    traverse(items, null)
+    return nodeMap
+}
+
+// --- NEW: Helper to get all descendant IDs for a given node ---
+private fun getDescendantIds(node: HierarchyNode): Set<String> {
+    val ids = mutableSetOf<String>()
+    node.children.forEach { child ->
+        ids.add(child.id)
+        ids.addAll(getDescendantIds(child))
+    }
+    return ids
+}
+
 @Composable
-private fun HierarchicalListView(
+private fun MultiSelectHierarchicalListView(
     items: List<SubListItem>,
+    hierarchy: Map<String, HierarchyNode>,
     selectedIds: Set<String>,
     onItemClick: (String) -> Unit
 ) {
+    // --- NEW: We need the hierarchy here to determine state ---
+    val hierarchy = remember(items) { buildHierarchy(items) }
+
     LazyColumn {
         items.forEach { item ->
-            // Render the top-level item
-            renderHierarchicalItem(
-                item = item,
-                selectedIds = selectedIds,
-                onItemClick = onItemClick,
-                level = 0 // Starting at level 0
-            )
+            val node = hierarchy[item.id.toString()]
+            if (node != null) {
+                renderHierarchicalItem(
+                    node = node,
+                    selectedIds = selectedIds,
+                    onItemClick = onItemClick,
+                    level = 0
+                )
+            }
         }
     }
 }
 
-// Recursive function to add items to the LazyColumn's scope
 private fun LazyListScope.renderHierarchicalItem(
-    item: SubListItem,
+    node: HierarchyNode,
     selectedIds: Set<String>,
     onItemClick: (String) -> Unit,
     level: Int
 ) {
-    // Add the current item to the list
-    item {
-        val isSelected = selectedIds.contains(item.id.toString())
+    // --- NEW: Determine ToggleableState for the checkbox ---
+    val toggleState = if (node.children.isEmpty()) {
+        // Leaf node: just selected or not
+        if (selectedIds.contains(node.id)) ToggleableState.On else ToggleableState.Off
+    } else {
+        // Parent node: check children states
+        val descendantIds = getDescendantIds(node)
+        val selectedDescendantCount = descendantIds.count { selectedIds.contains(it) }
+
+        when {
+            selectedDescendantCount == 0 -> ToggleableState.Off
+            selectedDescendantCount == descendantIds.size -> ToggleableState.On
+            else -> ToggleableState.Indeterminate // Partially selected
+        }
+    }
+
+    item(key = node.id) {
         ListItem(
-            headlineContent = { Text(item.label) },
+            headlineContent = { Text(node.item.label) },
             modifier = Modifier
-                .clickable { onItemClick(item.id.toString()) }
-                // Indent based on the nesting level
+                .clickable { onItemClick(node.id) }
                 .padding(start = (16 * level).dp),
             leadingContent = {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = null // Click is handled by the row
+                // --- Use TriStateCheckbox ---
+                TriStateCheckbox(
+                    state = toggleState,
+                    onClick = { onItemClick(node.id) }
                 )
             }
         )
     }
 
-    // If this item has a sublist, recursively call this function for its children
-    item.subList.let { subItems ->
-        subItems.forEach { subItem ->
-            renderHierarchicalItem(
-                item = subItem,
-                selectedIds = selectedIds,
-                onItemClick = onItemClick,
-                level = level + 1 // Increase indent level for children
-            )
-        }
+    // Recursively render children
+    node.children.forEach { childNode ->
+        renderHierarchicalItem(
+            node = childNode,
+            selectedIds = selectedIds,
+            onItemClick = onItemClick,
+            level = level + 1
+        )
     }
 }
 
 
+
 // --- Search-related composables and helpers (remain the same) ---
 @Composable
-private fun SearchListView(
+private fun MultiSelectSearchListView(
     items: List<FlatSearchItem>,
     selectedIds: Set<String>,
     onItemClick: (String) -> Unit
 ) {
     LazyColumn {
         items(items, key = { it.id }) { item ->
+            // In search, every item is treated as a leaf. No indeterminate state needed.
             val isSelected = selectedIds.contains(item.id)
             ListItem(
                 headlineContent = { Text(item.displayLabel) },
                 modifier = Modifier.clickable { onItemClick(item.id) },
                 leadingContent = {
-                    Checkbox(checked = isSelected, onCheckedChange = null)
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onItemClick(item.id) }
+                    )
                 }
             )
         }
     }
 }
+
 
 
 

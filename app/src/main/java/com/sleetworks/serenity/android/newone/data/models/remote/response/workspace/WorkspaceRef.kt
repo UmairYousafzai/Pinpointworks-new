@@ -7,5 +7,7 @@ data class WorkspaceRef(
     val caption: String?,
     @ColumnInfo(name = "workspace_id")
     val id: String,
+    @ColumnInfo(name = "workspace_type")
+    val type: String?,
 
 )

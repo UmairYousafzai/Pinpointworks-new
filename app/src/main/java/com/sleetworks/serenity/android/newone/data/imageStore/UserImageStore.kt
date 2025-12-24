@@ -132,7 +132,7 @@ class UserImageStore @Inject constructor(private val context: Context) {
         imageID: String, byteStream: InputStream, workspaceId: String,
         subdirectory: String,
     ) {
-        val file = checkImage(workspaceId,subdirectory,imageID)
+        val file = checkImage(workspaceId, subdirectory, imageID)
 
         if (!file.exists()) {
             try {
@@ -148,7 +148,7 @@ class UserImageStore @Inject constructor(private val context: Context) {
                 BufferedOutputStream(FileOutputStream(file.absolutePath))
 
             var inputStream: BufferedInputStream? = null
-                inputStream = BufferedInputStream(byteStream)
+            inputStream = BufferedInputStream(byteStream)
 
             var b: Int
             while ((inputStream.read().also { b = it }) != -1) {
@@ -160,4 +160,13 @@ class UserImageStore @Inject constructor(private val context: Context) {
         }
 
     }
+
+     fun deleteThumbnail(workspaceId: String, imageId: String) {
+        ExternalStorageUtils().deleteFile(workspaceId, "images/thumb", imageId, context)
+    }
+
+    fun deleteOriginal(workspaceId: String, imageId: String) {
+        ExternalStorageUtils().deleteFile(workspaceId, "images/original", imageId, context)
+    }
+
 }

@@ -664,9 +664,9 @@ fun CustomFieldListLayout(
 //            val selectedOption = findSubListItemById(customField.subList, selectedValueId)
 //            val displayText = selectedOption?.label ?: selectedValueId.ifEmpty { "Select..." }
 
-            val text = retrieveLabel(selectedValueId, customField.subList?:emptyList(), false, "")
+            val text = retrieveLabel(selectedValueId, customField.subList ?: emptyList(), false, "")
             Text(
-                text = text?.ifEmpty { "Select..." }?:"Select...",
+                text = text?.ifEmpty { "Select..." } ?: "Select...",
                 color = if (selectedValueId.isEmpty()) Color.Gray else Color.Black,
                 fontSize = 16.sp,
                 modifier = Modifier
@@ -723,7 +723,7 @@ private fun retrieveLabel(
         if (sublist.id.toString() == idOfChosenElement) {
             return retrieveLabel(
                 idOfChosenElement,
-                sublist.subList?:emptyList(),
+                sublist.subList ?: emptyList(),
                 true,
                 value + sublist.label
             )
@@ -733,7 +733,7 @@ private fun retrieveLabel(
             ) {
                 val `val` = retrieveLabel(
                     idOfChosenElement,
-                    sublist.subList?:emptyList(),
+                    sublist.subList ?: emptyList(),
                     false,
                     value + sublist.label + "/"
                 )
@@ -1867,17 +1867,11 @@ fun CustomFieldMultiListLayout(
     isOfflineModified: Boolean = false,
     onNotEditable: () -> Unit = {},
     onLockedClick: () -> Unit = {},
+    onValueChanged: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showDialog by remember { mutableStateOf(false) }
-//    var selectedItems = emptyList<Int?>()
-//    var selectedLabel = "Select..."
-//    if (selectedIds.isNotEmpty()) {
-//        selectedItems =
-//            filterSelectedItems(selectedIds.map { it.toInt() }, customField.subList ?: emptyList())
-//        selectedLabel =
-//            createSelectedItemsTitle(selectedItems, customField.subList ?: emptyList())
-//    }
+
 
     Column(
         modifier = modifier
@@ -1950,7 +1944,7 @@ fun CustomFieldMultiListLayout(
         ) {
             Text(
                 text = value.ifEmpty { "Select..." },
-                color = if (value.isEmpty() ) Color.Gray else Color.Black,
+                color = if (value.isEmpty()) Color.Gray else Color.Black,
                 fontSize = 16.sp,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1978,32 +1972,13 @@ fun CustomFieldMultiListLayout(
     if (showDialog) {
         MultiSelectListDialog(
             title = customField.label,
-            items = customField.subList?:emptyList(),
-            initialSelectedIds = selectedIds, // Pass the initial List<String>
+            items = customField.subList ?: emptyList(),
+            initialSelectedIds = selectedIds,
             onDismissRequest = { showDialog = false },
-            // The callback now correctly gives a List<Integer>
-            onSelectionConfirmed = { selectedItems -> // <--- This is now a List<Integer>
-
-                // --- Your existing logic from the callback can be pasted here directly ---
-
-                // This is the logic from your DefectViewFragment.java
-//                val title = createSelectedItemsTitle(selectedItems, customField.subList)
-
-                // To filter the list (assuming this function exists)
-//                val filteredSelectedItems = filterSelectedItems(selectedItems, customField.subList)
-
-                // Now update your ViewModel state
-                // ... (Update tvValue equivalent state) ...
-
-                // Converting list of Integer to List of String (just like in the original code)
-//                val stringList = filteredSelectedItems.map { it.toString() }
-
-                // Now call your viewmodel update function
-                // finalFilledCustomField1.setSelectedItemIds(stringList)
-                // updateField(DefectType.CUSTOM_FIELDS, finalFilledCustomField1)
-            }
-            , onClear = {
-
+            onSelectionConfirmed = { selectedItems ->
+                onValueChanged(selectedItems.map { it.toString() })
+            }, onClear = {
+                onValueChanged(emptyList())
             }
         )
     }

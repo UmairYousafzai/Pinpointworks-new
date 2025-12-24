@@ -1,7 +1,11 @@
 package com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDetail
 
 import CircularImage
-import android.util.Log
+import android.Manifest
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -38,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -62,16 +67,10 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.aghajari.compose.text.AnnotatedText
 import com.aghajari.compose.text.fromHtml
-import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.data.models.local.PointFieldType
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
-import com.sleetworks.serenity.android.newone.data.models.remote.response.Header
-import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.CreatedBy
-import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UpdatedBy
-import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
-import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.share.TargetRef
 import com.sleetworks.serenity.android.newone.data.storage.InternalWorkspaceStorageUtils
 import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
@@ -80,7 +79,10 @@ import com.sleetworks.serenity.android.newone.domain.models.share.PermissionDoma
 import com.sleetworks.serenity.android.newone.presentation.common.toPointCustomField
 import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
 import com.sleetworks.serenity.android.newone.presentation.ui.components.AppTopBar
+import com.sleetworks.serenity.android.newone.presentation.ui.components.ExpandableFab
 import com.sleetworks.serenity.android.newone.presentation.ui.components.LoaderDialog
+import com.sleetworks.serenity.android.newone.presentation.ui.dialogs.AddPhotoDialog
+import com.sleetworks.serenity.android.newone.presentation.ui.dialogs.MediaStorageSettingDialog
 import com.sleetworks.serenity.android.newone.presentation.ui.model.CustomFieldType
 import com.sleetworks.serenity.android.newone.presentation.ui.model.DefectFieldType
 import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemPriority
@@ -96,13 +98,21 @@ import com.sleetworks.serenity.android.newone.ui.theme.TransparentBlack
 import com.sleetworks.serenity.android.newone.ui.theme.gray
 import com.sleetworks.serenity.android.newone.ui.theme.onyx
 import com.sleetworks.serenity.android.newone.ui.theme.paleBlueGray
+import com.sleetworks.serenity.android.newone.utils.CONSTANTS.IMAGE
+import com.sleetworks.serenity.android.newone.utils.CONSTANTS.NONE
+import com.sleetworks.serenity.android.newone.utils.CONSTANTS.VIDEO
 import com.sleetworks.serenity.android.newone.utils.TextRichOptions
 import com.sleetworks.serenity.android.newone.utils.clearResult
+import com.sleetworks.serenity.android.newone.utils.createCameraImageFile
+import com.sleetworks.serenity.android.newone.utils.createCameraVideoFile
 import com.sleetworks.serenity.android.newone.utils.formatCommentDateTime
+import com.sleetworks.serenity.android.newone.utils.requestCameraPermission
+import com.sleetworks.serenity.android.newone.utils.requestStoragePermission
+import com.sleetworks.serenity.android.newone.utils.requestVideoPermissions
 import com.sleetworks.serenity.android.newone.utils.resultFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import java.util.UUID
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,21 +122,31 @@ fun DefectDetailScreen(
     viewModel: PointDetailViewModel = hiltViewModel(),
     sharedViewModel: SharedViewModel
 ) {
+    val TAG = "DefectDetailScreen"
 
-//    LaunchedEffect(Unit) {
-//        viewModel.getPointComments()
-//    }
-//    var point by remember { mutableStateOf(PointDomain()) }
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+    var addMediaType by remember { mutableStateOf(NONE) }
 
     var formulaLabel by remember { mutableStateOf("") }
     var editTextDialogLabel by remember { mutableStateOf("") }
 
+    // Camera image state
+    var cameraMediaUri by remember { mutableStateOf<Uri?>(null) }
 
-    val TAG = "DefectDetailScreen"
+
     var showEditTextDialog by remember {
+        mutableStateOf(false)
+    }
+
+
+    var showSettingDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var showAddPhotoDialog by remember {
         mutableStateOf(false)
     }
 
@@ -153,16 +173,127 @@ fun DefectDetailScreen(
     var showFormulaDialog by remember {
         mutableStateOf(false)
     }
+    val imageCameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success && cameraMediaUri != null) {
+            cameraMediaUri?.let { uri ->
+                viewModel.handleImageResult(listOf(uri))
+            }
+        }
+    }
+    val videoCameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CaptureVideo()
+    ) { success: Boolean ->
+        if (success && cameraMediaUri != null) {
+            cameraMediaUri?.let { uri ->
+                viewModel.handleVideoResult(listOf(uri))
+            }
+        } else {
+            sharedViewModel.showSnackbar("Video recording failed or was cancelled")
+        }
+    }
 
-    var pointFieldsLoader by remember { mutableStateOf(mutableMapOf<String, String>()) }
-    var pointFieldsSuccess by remember { mutableStateOf(mutableMapOf<String, String>()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun launchCamera() {
+        coroutineScope.launch {
+            val saveToExternal = viewModel.shouldSaveImageToExternalStorage()
+            val uri = context.createCameraImageFile(saveToExternal)
+            cameraMediaUri = uri
+            uri?.let {
+                imageCameraLauncher.launch(it)  // Use image launcher
+            } ?: run {
+                sharedViewModel.showSnackbar("Failed to create image file")
+            }
+        }
+    }
+
+    fun launchVideoCamera() {
+        coroutineScope.launch {
+            val saveToExternal = viewModel.shouldSaveVideoToExternalStorage()
+            val uri = context.createCameraVideoFile(saveToExternal)
+            cameraMediaUri = uri
+            uri?.let {
+                videoCameraLauncher.launch(it)  // Use video launcher
+            } ?: run {
+                sharedViewModel.showSnackbar("Failed to create video file")
+            }
+        }
+    }
+
+    val videoPermissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val cameraGranted = permissions[Manifest.permission.CAMERA] ?: false
+        val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] ?: false
+
+        when {
+            cameraGranted && audioGranted -> {
+                showSettingDialog = true
+            }
+
+            !cameraGranted && !audioGranted -> {
+                sharedViewModel.showSnackbar("Camera and audio permissions are required to record videos")
+            }
+
+            !cameraGranted -> {
+                sharedViewModel.showSnackbar("Camera permission is required to record videos")
+            }
+
+            !audioGranted -> {
+                sharedViewModel.showSnackbar("Audio permission is required to record videos")
+            }
+        }
+    }
+    // Camera permission launcher - only handles images
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            showSettingDialog = true
+        } else {
+            sharedViewModel.showSnackbar("Camera permission is required to take pictures")
+        }
+    }
+
+    // Multiple permissions launcher for videos (needs CAMERA + RECORD_AUDIO)
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            if (addMediaType == IMAGE) {
+                viewModel.handleImageResult(uris)
+            } else {
+                viewModel.handleVideoResult(uris)
+
+            }
+        }
+    }
+
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            imagePickerLauncher.launch(
+                PickVisualMediaRequest(
+                    if (addMediaType == IMAGE) ActivityResultContracts.PickVisualMedia.ImageOnly
+                    else ActivityResultContracts.PickVisualMedia.VideoOnly
+                )
+            )
+        } else {
+            sharedViewModel.showSnackbar("Storage permission is required to select pictures")
+        }
+    }
+
 
     val plainText by navController.resultFlow("plainText", "").collectAsState()
     val base64Value by navController.resultFlow("base64Value", "").collectAsState()
+    val richfieldType by navController.resultFlow("fieldType", "").collectAsState()
     val mentions by navController.resultFlow("mentions", emptyList<String>()).collectAsState()
     val richCustomFieldId by navController.resultFlow("customFieldId", "").collectAsState()
     val richCustomFieldTempId by navController.resultFlow("customFieldTempId", "").collectAsState()
-//    val fieldType by navController.resultFlow("fieldType", emptyList<String>()).collectAsState()
 
     val isLoading by viewModel.mainLoader.collectAsState()
     val point by viewModel.point.collectAsState()
@@ -183,6 +314,11 @@ fun DefectDetailScreen(
     var offlineModifiedFields by remember {
         mutableStateOf(offlineModifiedPointFields.associateBy {
             it.field
+        })
+    }
+    var offlineModifiedFieldsByType by remember {
+        mutableStateOf(offlineModifiedPointFields.associateBy {
+            it.type
         })
     }
 
@@ -206,22 +342,21 @@ fun DefectDetailScreen(
                 site != null && workspaceId != null
             }
 
-        viewModel.syncPoint()
+//        viewModel.syncPoint()
     }
 
     LaunchedEffect(offlineModifiedPointFields) {
         offlineModifiedFields = offlineModifiedPointFields.associateBy {
             it.field
         }
+        offlineModifiedFieldsByType = offlineModifiedPointFields.associateBy {
+            it.type
+        }
 
     }
 
 
-    LaunchedEffect(workspaceUsers) {
-        Log.e(TAG, "DefectDetailScreen: ${Gson().toJson(workspaceUsers)}")
-    }
 
-    // Hide keyboard after dialog is dismissed with a small delay
     LaunchedEffect(showEditTextDialog) {
         if (!showEditTextDialog) {
             delay(100) // Small delay to ensure dialog is fully dismissed
@@ -244,6 +379,8 @@ fun DefectDetailScreen(
                     pointCf.value = base64Value
                     viewModel.updateCustomField(cf, pointCf)
                 }
+            } else if (richfieldType == PointFieldType.COMMENT.value) {
+                viewModel.addNewComment(plainText, base64Value, mentions)
             } else {
                 viewModel.updatePoint(
                     mapOf(
@@ -260,6 +397,9 @@ fun DefectDetailScreen(
         if (base64Value.isNotEmpty()) {
             navController.clearResult("base64Value")
         }
+        if (richfieldType.isNotEmpty()) {
+            navController.clearResult("fieldType")
+        }
         if (mentions.isNotEmpty()) {
             navController.clearResult("mentions")
         }
@@ -273,31 +413,32 @@ fun DefectDetailScreen(
     }
 
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    Box {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            AppTopBar(
+                actionIcons = listOf(
+                    Pair("Done", Icons.Default.Sync)
+                )
+            ) { action ->
 
-        LazyColumn() {
-            item {
-                Column() {
-                    AppTopBar(
-                        actionIcons = listOf(
-                            Pair("Done", Icons.Default.Sync)
-                        )
-                    ) { action ->
-
-                        when (action) {
-                            "Done" -> {
-                                viewModel.syncPoint()
-                            }
-
-                            "Back" -> {
-                                navController.popBackStack()
-                            }
-                        }
+                when (action) {
+                    "Done" -> {
+                        viewModel.syncPointDetail()
                     }
+
+                    "Back" -> {
+                        navController.popBackStack()
+                    }
+                }
+            }
+
+
+            LazyColumn() {
+                item {
                     PointDetails(
                         point, workspaceUsers,
                         isLoading = fieldLoader,
@@ -326,486 +467,555 @@ fun DefectDetailScreen(
                     )
 
                 }
+
+                items(customFieldTemplates) { customField ->
+                    if (customField.display == false) return@items
+                    val permission =
+                        customFieldPermission?.get(customField.id)
+                            ?: CustomFieldPermissionDomainModel(
+                                customField.id,
+                                PermissionDomainModel(read = true, edit = true)
+                            )
+                    val pointCF = pointCustomFieldByTemplateId[customField.id.toString()]
+
+
+                    when (CustomFieldType.fromValue(customField.type)) {
+
+                        CustomFieldType.TEXT -> {
+                            CustomFieldTextLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditClick = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onValueChange = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+
+                                }
+                            )
+
+                        }
+
+                        CustomFieldType.DATE -> {
+                            CustomFieldDateLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onDateChange = { dataMilli ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = dataMilli.toString()
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+
+                                }
+                            )
+                        }
+
+                        CustomFieldType.COST -> {
+                            CustomFieldCostLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onValueChanged = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+                                }
+                            )
+                        }
+
+                        CustomFieldType.LIST -> {
+
+                            CustomFieldListLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                selectedValueId = pointCF?.idOfChosenElement ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onOptionSelected = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.idOfChosenElement = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+
+                                }
+
+                            )
+                        }
+
+                        CustomFieldType.NUMBERS -> {
+                            CustomFieldNumbersLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onValueChanged = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+                                }
+                            )
+                        }
+
+                        CustomFieldType.RICHTEXT -> {
+
+                            CustomFieldRichTextLayout(
+                                customField = customField,
+                                content = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onEditClick = {
+                                    navController.navigate(
+                                        Screen.RichTextEditorScreen.route +
+                                                "/${PointFieldType.DESCRIPTION.value}/${customField.id}/${pointCF?.value ?: ""}"
+                                    )
+                                }
+                            )
+                        }
+
+                        CustomFieldType.TIME -> {
+
+                            TimeCustomFieldLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onValueChanged = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+
+                                }
+                            )
+                        }
+
+                        CustomFieldType.PERCENTAGE -> {
+
+                            CustomFieldPercentageLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onAddClick = { /* Handle add click */ },
+                                onViewClick = { /* Handle view click */ },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+
+                                },
+                                onValueChanged = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+                                }
+                            )
+                        }
+
+                        CustomFieldType.CHECKBOX -> {
+                            CustomFieldCheckboxLayout(
+                                customField = customField,
+                                checked = pointCF?.value == "true",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onCheckedChange = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value.toString()
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+                                },
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+
+                                },
+                            )
+                        }
+
+                        CustomFieldType.TIMELINE -> {
+                            CustomFieldTimelineLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                permission = permission,
+                                isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
+                                isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+
+                                },
+                                onDateChange = { value ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.value = value
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+                                }
+                            )
+                        }
+
+                        CustomFieldType.FORMULA -> {
+                            CustomFieldFormulaLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                onClicked = { label ->
+                                    formulaLabel = label
+                                    showFormulaDialog = true
+                                }
+                            )
+                        }
+
+                        CustomFieldType.MULTI_LIST -> {
+                            CustomFieldMultiListLayout(
+                                customField = customField,
+                                value = pointCF?.value ?: "",
+                                selectedIds = pointCF?.selectedItemIds ?: emptyList(),
+                                permission = permission,
+                                isLoading = false,
+                                isCompleted = false,
+                                isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
+                                onLockedClick = {
+                                    showLockedDialog = true
+                                },
+                                onNotEditable = {
+                                    sharedViewModel.showSnackbar("Not editable field")
+                                },
+                                onValueChanged = { ids ->
+                                    val newPointCustomField =
+                                        pointCF ?: customField.toPointCustomField()
+                                    newPointCustomField.selectedItemIds = ids
+                                    viewModel.updateCustomField(customField, newPointCustomField)
+
+
+                                }
+                            )
+                        }
+
+                        null -> {}
+                    }
+
+                }
+
+                item {
+                    if (point.images.isNotEmpty())
+                        PhotoSection(
+                            point = point,
+                            workspaceId = workspaceId ?: "",
+                            offlineModifiedFields = offlineModifiedFields,
+                            navController = navController,
+                            showPhotoSelectionDialog = {
+
+                            }
+                        )
+                    if (point.videos.isNotEmpty())
+                        VideoSection(
+                            point = point,
+                            offlineModifiedFields = offlineModifiedFields,
+                            navController = navController
+                        )
+                    if (point.comments.isNotEmpty())
+                        CommentSection(
+                            comments = point.comments,
+                            viewModel = viewModel,
+                            offlineModifiedFields = offlineModifiedFieldsByType,
+                            onLikedClicked = { comment, isLiked ->
+
+
+                                viewModel.updateReaction(comment, isLiked)
+                            }
+                        )
+                }
+
             }
-            items(customFieldTemplates) { customField ->
-                if (customField.display == false) return@items
-                val permission =
-                    customFieldPermission?.get(customField.id) ?: CustomFieldPermissionDomainModel(
-                        customField.id,
-                        PermissionDomainModel(read = true, edit = true)
-                    )
-                val pointCF = pointCustomFieldByTemplateId[customField.id.toString()]
 
-
-                when (CustomFieldType.fromValue(customField.type)) {
-
-                    CustomFieldType.TEXT -> {
-                        CustomFieldTextLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onNotEditClick = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            },
-                            onValueChange = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-
-                            }
-                        )
+            if (showSettingDialog) {
+                MediaStorageSettingDialog(
+                    title = if (IMAGE == addMediaType) "Save images to device" else "Save videos to device",
+                    body = if (IMAGE == addMediaType) "Photos taken in app will automatically save to the photo library on the device. " +
+                            "(This can be changed later in the Settings panel.)" else "Videos taken in app will automatically save to the library on the device. " +
+                            "(This can be changed later in the Settings panel.)",
+                    onConfirm = {
+                        showSettingDialog = false
+                        if (addMediaType === IMAGE) {
+                            viewModel.shouldSaveImageTOExternalStorage(true)
+                        } else {
+                            viewModel.shouldSaveVideoTOExternalStorage(true)
+                        }
+                        if (addMediaType == IMAGE) launchCamera() else launchVideoCamera()
+                    },
+                    onDismiss = {
+                        showSettingDialog = false
+                        if (addMediaType === IMAGE) {
+                            viewModel.shouldSaveImageTOExternalStorage(false)
+                        } else {
+                            viewModel.shouldSaveVideoTOExternalStorage(false)
+                        }
+                        if (addMediaType == IMAGE) launchCamera() else launchVideoCamera()
 
                     }
+                )
+                addMediaType = NONE
+            }
 
-                    CustomFieldType.DATE -> {
-                        CustomFieldDateLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onLockedClick = {
-                                showLockedDialog = true
+            if (showAddPhotoDialog)
+                AddPhotoDialog(
+                    mediaType = addMediaType,
+                    onTakeMediaClick = { mediaType ->
+                        if (mediaType == IMAGE) {
+                            // For images, only need CAMERA permission
+                            context.requestCameraPermission(
+                                onRequestPermission = { permission ->
+                                    cameraPermissionLauncher.launch(permission)
+                                },
+                                onPermissionGranted = {
+                                    launchCamera()
+                                }
+                            )
+                        } else {
+                            // For videos, use the new requestVideoPermissions utility
+                            context.requestVideoPermissions(
+                                onPermissionsGranted = {
+                                    // Both permissions granted, launch video camera
+                                    launchVideoCamera()
+                                },
+                                onRequestPermissions = { permissions ->
+                                    // Request missing permissions together
+                                    videoPermissionsLauncher.launch(permissions)
+                                }
+                            )
+                        }
+                    },
+                    onSelectMediaClick = {
+                        context.requestStoragePermission(
+                            onRequestPermission = { permission ->
+                                storagePermissionLauncher.launch(permission)
                             },
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            },
-                            onDateChange = { dataMilli ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = dataMilli.toString()
-                                viewModel.updateCustomField(customField, newPointCustomField)
-
-                            }
-                        )
-                    }
-
-                    CustomFieldType.COST -> {
-                        CustomFieldCostLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onValueChanged = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-                            }
-                        )
-                    }
-
-                    CustomFieldType.LIST -> {
-
-                        CustomFieldListLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            selectedValueId = pointCF?.idOfChosenElement ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onOptionSelected = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.idOfChosenElement = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-
-                            }
-
-                        )
-                    }
-
-                    CustomFieldType.NUMBERS -> {
-                        CustomFieldNumbersLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onValueChanged = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-                            }
-                        )
-                    }
-
-                    CustomFieldType.RICHTEXT -> {
-
-                        CustomFieldRichTextLayout(
-                            customField = customField,
-                            content = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onEditClick = {
-                                navController.navigate(
-                                    Screen.RichTextEditorScreen.route +
-                                            "/${PointFieldType.DESCRIPTION.value}/${customField.id}/${pointCF?.value ?: ""}"
+                            onPermissionGranted = {
+                                imagePickerLauncher.launch(
+                                    PickVisualMediaRequest(
+                                        if (addMediaType == IMAGE) ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        else ActivityResultContracts.PickVisualMedia.VideoOnly
+                                    )
                                 )
                             }
                         )
+                    },
+                    onDismiss = {
+                        showAddPhotoDialog = false
                     }
+                )
 
-                    CustomFieldType.TIME -> {
+            if (showEditTextDialog)
+                PointTextEditDialog(
+                    editTextDialogLabel, initialValue = point.title,
+                    onDismiss = {
+                        showEditTextDialog = false
+                    },
+                    onConfirm = { value ->
+                        showEditTextDialog = false
+                        viewModel.updatePointFields(mapOf(DefectFieldType.TITLE to value))
+                    },
 
-                        TimeCustomFieldLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onValueChanged = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
+                    )
 
-                            }
-                        )
+            // Dialog
+            if (showPriorityDialog) {
+                PriorityPickerDialog(
+                    selectedPriority = PointItemPriority.from(point.priority),
+                    onPrioritySelected = { priority ->
+                        showPriorityDialog = false
+                        viewModel.updatePointFields(mapOf(DefectFieldType.PRIORITY to priority.label.uppercase()))
+                    },
+                    onDismiss = {
+                        showPriorityDialog = false
                     }
-
-                    CustomFieldType.PERCENTAGE -> {
-
-                        CustomFieldPercentageLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onAddClick = { /* Handle add click */ },
-                            onViewClick = { /* Handle view click */ },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-
-                            },
-                            onValueChanged = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-                            }
-                        )
-                    }
-
-                    CustomFieldType.CHECKBOX -> {
-                        CustomFieldCheckboxLayout(
-                            customField = customField,
-                            checked = pointCF?.value == "true",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onCheckedChange = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value.toString()
-                                viewModel.updateCustomField(customField, newPointCustomField)
-                            },
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-
-                            },
-                        )
-                    }
-
-                    CustomFieldType.TIMELINE -> {
-                        CustomFieldTimelineLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            permission = permission,
-                            isLoading = (pointCF != null && (pointCF.customFieldTemplateId == fieldLoader.first) && fieldLoader.second),
-                            isCompleted = (pointCF != null && (pointCF.customFieldTemplateId == fieldSuccess.first) && fieldSuccess.second),
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-
-                            },
-                            onDateChange = { value ->
-                                val newPointCustomField =
-                                    pointCF ?: customField.toPointCustomField()
-                                newPointCustomField.value = value
-                                viewModel.updateCustomField(customField, newPointCustomField)
-                            }
-                        )
-                    }
-
-                    CustomFieldType.FORMULA -> {
-                        CustomFieldFormulaLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            onClicked = { label ->
-                                formulaLabel = label
-                                showFormulaDialog = true
-                            }
-                        )
-                    }
-
-                    CustomFieldType.MULTI_LIST -> {
-                        CustomFieldMultiListLayout(
-                            customField = customField,
-                            value = pointCF?.value ?: "",
-                            selectedIds = pointCF?.selectedItemIds ?: emptyList(),
-                            permission = permission,
-                            isLoading = false,
-                            isCompleted = false,
-                            isOfflineModified = offlineModifiedFields.contains(customField.id.toString()),
-                            onLockedClick = {
-                                showLockedDialog = true
-                            },
-                            onNotEditable = {
-                                sharedViewModel.showSnackbar("Not editable field")
-                            }
-                        )
-                    }
-
-                    null -> {}
-                }
-
+                )
             }
 
-            item {
-                PhotoSection(
-                    point = point,
-                    workspaceId = workspaceId ?: "",
-                    offlineModifiedFields = offlineModifiedFields,
-                    showPhotoSelectionDialog = {
-
-                    }
-                )
-                VideoSection(
-                    point = point,
-                    offlineModifiedFields = offlineModifiedFields,
-                    showVideoSelectionDialog = {
-
-                    }
-                )
-                CommentSection(
-                    comments = point.comments,
-                    viewModel = viewModel,
-                    offlineModifiedFields = offlineModifiedFields,
-                    onLikedClicked = { comment, isLiked ->
-                        val uuid: String = UUID.randomUUID().toString()
-                        val oldReaction = comment.reactions
-                        val newReaction =
-                            if (comment.reactions != null) {
-                                val oldLikes = ArrayList(comment.reactions.like)
-
-                                if (!isLiked) {
-                                    oldLikes.add(user.id)
-                                }else{
-                                    oldLikes.remove(user.id)
-
-                                }
-                                oldReaction.like = oldLikes
-                                oldReaction
-                            } else Reaction(
-                                id = uuid,
-                                header = Header(
-                                    createdBy = CreatedBy(user.username, user.id, "", user.imageID),
-                                    createdEpochMillis = System.currentTimeMillis(),
-                                    createdUserAgent = "",
-                                    updatedBy = UpdatedBy(
-                                        user.username,
-                                        user.id,
-                                        user.imageID,
-                                        ""
-                                    ),
-                                    updatedEpochMillis = System.currentTimeMillis(),
-                                    updatedUserAgent = ""
-                                ),
-                                like = if (!isLiked)listOf(user.id) else emptyList(),
-                                tags = emptyList(),
-                                targetRef = TargetRef(
-                                    type = "",
-                                    caption = "",
-                                    id = comment.id
-                                ),
-                                type = "",
-                                commentId = comment.id
-
+            if (showPointStatusDialog) {
+                StatusPickerDialog(
+                    selectedStatus = PointItemStatus.from(point.status),
+                    onStatusSelected = { status ->
+                        showPointStatusDialog = false
+                        viewModel.updatePointFields(
+                            mapOf(
+                                DefectFieldType.STATUS to
+                                        PointItemStatus.toUpperValue(status.label)
                             )
+                        )
 
-                        viewModel.updateReaction(newReaction, isLiked)
+                    },
+                    onDismiss = {
+                        showPointStatusDialog = false
+
+                    }
+                )
+
+            }
+
+
+            if (showFlagDialog) {
+                FlaggedChoiceDialog(
+                    selectedFlaggedState = point.flagged,
+                    onFlaggedStateSelected = { state ->
+                        viewModel.updatePointFields(
+                            mapOf(
+                                DefectFieldType.RED_FLAG to
+                                        state
+                            )
+                        )
+                        showFlagDialog = false
+                    },
+                    onDismiss = {
+                        showFlagDialog = false
+
+                    }
+
+                )
+            }
+
+            if (showAssigneeDialog) {
+                AssigneeDialog(
+                    assignees = workspaceUsers,
+                    selectedAssigneeIds = point.assigneeIds,
+                    onAssigneeSelected = { ids ->
+                        showAssigneeDialog = false
+                        viewModel.updatePointFields(mapOf(DefectFieldType.ASSIGNEES to ids))
+                    },
+                    onDismiss = {
+                        showAssigneeDialog = false
                     }
                 )
             }
 
-        }
+            if (showTagDialog) {
+                TagsDialog(
+                    tags = site?.tags ?: emptyList(),
+                    selectedTags = point.tags,
+                    onTagSelected = { ids ->
+                        showTagDialog = false
+                        viewModel.updatePointFields(mapOf(DefectFieldType.TAGS to ids))
 
-        if (showEditTextDialog)
-            PointTextEditDialog(
-                editTextDialogLabel, initialValue = point.title,
-                onDismiss = {
-                    showEditTextDialog = false
-                },
-                onConfirm = { value ->
-                    showEditTextDialog = false
-                    viewModel.updatePointFields(mapOf(DefectFieldType.TITLE to value))
-                },
-
+                    },
+                    onDismiss = {
+                        showTagDialog = false
+                    }
                 )
+            }
 
-        // Dialog
-        if (showPriorityDialog) {
-            PriorityPickerDialog(
-                selectedPriority = PointItemPriority.from(point.priority),
-                onPrioritySelected = { priority ->
-                    showPriorityDialog = false
-                    viewModel.updatePointFields(mapOf(DefectFieldType.PRIORITY to priority.label.uppercase()))
-                },
-                onDismiss = {
-                    showPriorityDialog = false
-                }
-            )
-        }
+            if (showLockedDialog) {
+                LockedDialog(onDismiss = {
+                    showLockedDialog = false
+                })
+            }
 
-        if (showPointStatusDialog) {
-            StatusPickerDialog(
-                selectedStatus = PointItemStatus.from(point.status),
-                onStatusSelected = { status ->
-                    showPointStatusDialog = false
-                    viewModel.updatePointFields(
-                        mapOf(
-                            DefectFieldType.STATUS to
-                                    PointItemStatus.toUpperValue(status.label)
-                        )
-                    )
+            if (showFormulaDialog) {
+                FormulaDialog(formulaLabel, onDismiss = {
+                    showFormulaDialog = false
+                })
+            }
 
-                },
-                onDismiss = {
-                    showPointStatusDialog = false
+            if (isLoading) {
+                LoaderDialog(text = "Syncing...")
+            }
 
-                }
-            )
 
         }
 
-
-        if (showFlagDialog) {
-            FlaggedChoiceDialog(
-                selectedFlaggedState = point.flagged,
-                onFlaggedStateSelected = { state ->
-                    viewModel.updatePointFields(
-                        mapOf(
-                            DefectFieldType.RED_FLAG to
-                                    state
-                        )
-                    )
-                    showFlagDialog = false
-                },
-                onDismiss = {
-                    showFlagDialog = false
-
-                }
-
-            )
-        }
-
-        if (showAssigneeDialog) {
-            AssigneeDialog(
-                assignees = workspaceUsers,
-                selectedAssigneeIds = point.assigneeIds,
-                onAssigneeSelected = { ids ->
-                    showAssigneeDialog = false
-                    viewModel.updatePointFields(mapOf(DefectFieldType.ASSIGNEES to ids))
-                },
-                onDismiss = {
-                    showAssigneeDialog = false
-                }
-            )
-        }
-
-        if (showTagDialog) {
-            TagsDialog(
-                tags = site?.tags ?: emptyList(),
-                selectedTags = point.tags,
-                onTagSelected = { ids ->
-                    showTagDialog = false
-                    viewModel.updatePointFields(mapOf(DefectFieldType.TAGS to ids))
-
-                },
-                onDismiss = {
-                    showTagDialog = false
-                }
-            )
-        }
-
-        if (showLockedDialog) {
-            LockedDialog(onDismiss = {
-                showLockedDialog = false
-            })
-        }
-
-        if (showFormulaDialog) {
-            FormulaDialog(formulaLabel, onDismiss = {
-                showFormulaDialog = false
-            })
-        }
-
-        if (isLoading) {
-            LoaderDialog(text = "Syncing...")
-        }
-
-
+        ExpandableFab(
+            modifier = Modifier
+                .align(Alignment.BottomEnd),
+            onCameraClick = {
+                addMediaType = IMAGE
+                showAddPhotoDialog = true
+            },
+            onVideoClick = {
+                addMediaType = VIDEO
+                showAddPhotoDialog = true
+            },
+            onCommentClick = {
+                navController.navigate(
+                    Screen.RichTextEditorScreen.route +
+                            "/${PointFieldType.COMMENT.value}/${""}/${""}"
+                )
+            },
+        )
     }
 }
 
@@ -1351,6 +1561,7 @@ fun TextChipWithIcon(
 fun PhotoSection(
     point: PointDomain,
     workspaceId: String,
+    navController: NavHostController,
     offlineModifiedFields: Map<String, OfflineModifiedPointFields>,
     showPhotoSelectionDialog: () -> Unit,
 ) {
@@ -1376,7 +1587,7 @@ fun PhotoSection(
                 .padding(horizontal = 5.dp)
         )
 
-        if (offlineModifiedFields.contains(DefectFieldType.IMAGES)) {
+        if (offlineModifiedFields.contains(DefectFieldType.IMAGES + point.id)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                 contentDescription = "Offline modified",
@@ -1402,7 +1613,10 @@ fun PhotoSection(
             Card(
                 modifier = Modifier
                     .size(100.dp)
-                    .padding(horizontal = 2.dp, vertical = 5.dp),
+                    .padding(horizontal = 2.dp, vertical = 5.dp)
+                    .clickable {
+                        navController.navigate(Screen.PhotoViewScreen.route + "/$it" + "/${point.id}")
+                    },
                 shape = RoundedCornerShape(8.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 border = BorderStroke(1.dp, Color.LightGray)
@@ -1432,7 +1646,7 @@ fun PhotoSection(
 fun VideoSection(
     point: PointDomain,
     offlineModifiedFields: Map<String, OfflineModifiedPointFields>,
-    showVideoSelectionDialog: () -> Unit,
+    navController: NavHostController
 ) {
     Row(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)) {
         Icon(
@@ -1456,7 +1670,7 @@ fun VideoSection(
                 .padding(horizontal = 5.dp)
         )
 
-        if (offlineModifiedFields.contains(DefectFieldType.VIDEOS)) {
+        if (offlineModifiedFields.contains(DefectFieldType.VIDEOS + point.id)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                 contentDescription = "Offline modified",
@@ -1476,7 +1690,11 @@ fun VideoSection(
             Text(
                 point.videos[it].caption ?: "",
                 style = TextStyle(color = onyx, fontSize = 16.sp),
-                modifier = Modifier.padding(vertical = 10.dp)
+                modifier = Modifier
+                    .padding(vertical = 10.dp)
+                    .clickable {
+                        navController.navigate(Screen.VideoPlayerScreen.route + "/${point.videos[it].id}/${point.id}")
+                    }
             )
 
         }
@@ -1515,7 +1733,10 @@ fun CommentSection(
                 .padding(horizontal = 5.dp)
         )
 
-        if (offlineModifiedFields.contains(DefectFieldType.REACTION)) {
+        if (offlineModifiedFields.contains(DefectFieldType.REACTION) || offlineModifiedFields.contains(
+                DefectFieldType.COMMENT
+            )
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_cloud_upload_solid),
                 contentDescription = "Offline modified",
@@ -1559,15 +1780,18 @@ fun CommentItem(
     ) {
 
         val authorAndDate =
-            "${comment.header.updatedBy.caption} - ${comment.header.updatedEpochMillis.formatCommentDateTime()}"
+            "${comment.header?.updatedBy?.caption ?: comment.author?.name} - ${comment.header?.updatedEpochMillis?.formatCommentDateTime() ?: ""}"
 
         Row(
             modifier = Modifier
                 .weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val imageFile = viewModel.getUserAvatar(comment.header.createdBy.primaryImageId)
-            CircularImage(comment.header.createdBy.caption, imageFile, 45)
+            val imageFile =
+                viewModel.getUserAvatar(
+                    comment.header?.createdBy?.primaryImageId ?: comment.author?.images[0]?.id ?: ""
+                )
+            CircularImage(comment.header?.createdBy?.caption ?: comment.author?.name, imageFile, 45)
             Spacer(modifier = Modifier.width(20.dp))
 
             var commentText = TextRichOptions
@@ -1660,7 +1884,8 @@ fun CommentItem(
                 .clickable {
 
                     onLikeClick(comment, isLikedByMe)
-                           isLikedByMe = !isLikedByMe},
+                    isLikedByMe = !isLikedByMe
+                },
             tint = Color.Unspecified
         )
     }

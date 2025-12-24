@@ -54,6 +54,34 @@ abstract class AbstractRootFileStore {
         return File(subdir, fileName)
     }
 
+    fun getFileReference(
+        workspace: String,
+        subdirectory: String,
+        fileName: String,
+        context: Context
+    ): File {
+        val subdir = getSubdirectory(workspace, subdirectory, true, context)
+        return File(subdir, fileName)
+    }
+
+    fun getOutputStream(
+        workspace: String,
+        subdirectory: String,
+        fileName: String,
+        context: Context
+    ): OutputStream {
+        val subdir = getSubdirectory(workspace, subdirectory, true, context)
+        val file = File(subdir, fileName)
+        file.delete()
+
+        try {
+            return BufferedOutputStream(FileOutputStream(file))
+        } catch (e: FileNotFoundException) {
+            throw java.lang.RuntimeException("Could not find file " + file.absolutePath)
+        }
+    }
+
+
     /**
      * Create an output stream to a file in the store. This is used to receive an image direct from an HTTP stream without
      * holding it in RAM. The stream must be closed externally.
@@ -109,6 +137,21 @@ abstract class AbstractRootFileStore {
         val file = File(subdir, fileName)
         if (file.exists()) file.delete()
     }
+    fun deleteFile(
+        workspaceId: String,
+        subdirectory: String,
+        fileName: String,
+        context: Context
+    ) {
+        val subdir = getSubdirectory(workspaceId, subdirectory, false, context)
+        if (subdir == null) {
+            return
+        }
+        val file = File(subdir, fileName)
+        if (file.exists()) {
+            file.delete()
+        }
+    }
 
     /**
      * Remove all files from the store recursively.
@@ -135,7 +178,12 @@ abstract class AbstractRootFileStore {
      * Rename a file. Typically used when a new image has been uploaded - we can keep the local files instead of downloading
      * the new remote ones.
      */
-    fun renameFile(subdirectory: String, oldFileName: String, newFileName: String, context: Context): Boolean {
+    fun renameFile(
+        subdirectory: String,
+        oldFileName: String,
+        newFileName: String,
+        context: Context
+    ): Boolean {
         val file = getFileReference(subdirectory, oldFileName, context)
         return file.exists() && file.isFile && file.renameTo(File(file.parentFile, newFileName))
     }
@@ -165,7 +213,11 @@ abstract class AbstractRootFileStore {
     /**
      * Used to delete orphaned files after sync. Deletes all files in a subdirectory excluding the given names.
      */
-    fun deleteAllWithExclusions(subdirectory: String, excludeFileNames: Set<String>?, context: Context) {
+    fun deleteAllWithExclusions(
+        subdirectory: String,
+        excludeFileNames: Set<String>?,
+        context: Context
+    ) {
         val subdir = getSubdirectory(subdirectory, false, context) ?: return
         subdir.listFiles()?.forEach { file ->
             if (excludeFileNames == null || !excludeFileNames.contains(file.name)) {
@@ -174,8 +226,12 @@ abstract class AbstractRootFileStore {
         }
     }
 
-    private fun getSubdirectory(subdirectory: String?, createIfMissing: Boolean, context: Context): File? {
-        val path = StringBuilder(getRootDir(context)?.absolutePath?:"").apply {
+    private fun getSubdirectory(
+        subdirectory: String?,
+        createIfMissing: Boolean,
+        context: Context
+    ): File? {
+        val path = StringBuilder(getRootDir(context)?.absolutePath ?: "").apply {
             if (!subdirectory.isNullOrEmpty()) {
                 if (!endsWith(File.separator)) append(File.separator)
                 append(subdirectory)
@@ -189,7 +245,35 @@ abstract class AbstractRootFileStore {
                 subdir.mkdirs()
                 subdir
             }
+
             else -> null
+        }
+    }
+
+    fun getSubdirectory(
+        workspace: String,
+        subdirectory: String,
+        createIfMissing: Boolean,
+        context: Context
+    ): File? {
+        require(workspace.isNotEmpty()) { "Workspace ID is required" }
+        var path = getRootDir(context)!!.absolutePath
+        if (!path.endsWith(File.separator)) {
+            path += File.separator
+        }
+        path += workspace
+        if (subdirectory.isNotEmpty()) {
+            path += File.separator + subdirectory
+        }
+        val subdir = File(path)
+
+        if (subdir.exists() && subdir.isDirectory) {
+            return subdir
+        } else if (createIfMissing) {
+            subdir.mkdirs()
+            return subdir
+        } else {
+            return null
         }
     }
 

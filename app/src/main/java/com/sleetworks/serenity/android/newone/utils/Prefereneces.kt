@@ -23,10 +23,15 @@ const val WORKSPACE_ID ="workspace_id"
 const val SITE_ID ="site_id"
 const val FIRST_SYNC ="first_sync"
 const val USER_IMAGE_ID ="user_image_id"
+const val USER ="user"
+const val SAVE_IMAGE_TO_EXTERNAL_STORAGE ="save_image_to_external_storage"
+const val SAVE_VIDEO_TO_EXTERNAL_STORAGE ="save_video_to_external_storage"
 const val WORKSPACE_SYNC_TIMESTAMP ="workspace_sync_timestamp"
 const val POINT_SYNC_TIMESTAMP ="point_sync_timestamp"
 
 //Pref keys
+val PREF_SAVE_IMAGE_TO_EXTERNAL_STORAGE = booleanPreferencesKey(SAVE_IMAGE_TO_EXTERNAL_STORAGE)
+val PREF_SAVE_VIDEO_TO_EXTERNAL_STORAGE = booleanPreferencesKey(SAVE_VIDEO_TO_EXTERNAL_STORAGE)
 val PREF_AUTH_TOKEN = stringPreferencesKey(AUTH_TOKEN)
 val PREF_EMAIL = stringPreferencesKey(EMAIL)
 val PREF_BASE_URL = stringPreferencesKey(BASE_URL)
@@ -34,6 +39,7 @@ val PREF_PASSWORD = stringPreferencesKey(PASSWORD)
 val PREF_IS_LOGIN = booleanPreferencesKey(IS_LOGIN)
 val PREF_USER_ID = stringPreferencesKey(USER_ID)
 val PREF_USER_NAME = stringPreferencesKey(USER_NAME)
+val PREF_USER = stringPreferencesKey(USER)
 val PREF_WORKSPACE_ID = stringPreferencesKey(WORKSPACE_ID)
 val PREF_SITE_ID = stringPreferencesKey(SITE_ID)
 val PREF_FIRST_SYNC= booleanPreferencesKey(FIRST_SYNC)

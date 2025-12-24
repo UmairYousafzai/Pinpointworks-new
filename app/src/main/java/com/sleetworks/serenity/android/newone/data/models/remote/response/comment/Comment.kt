@@ -11,9 +11,9 @@ data class Comment(
     val comment: String,
     val commentRich: String,
     val defectRef: DefectRef,
-    val header: Header,
+    val header: Header?,
     val tags: List<String>,
     val totalBytes: Int,
     val type: String,
-    val workspaceRef: WorkspaceRef
+    val workspaceRef: WorkspaceRef,
 ) : Serializable

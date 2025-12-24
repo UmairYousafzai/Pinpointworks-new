@@ -18,5 +18,6 @@ data class OfflineModifiedPointFields(
     val workspaceId: String,
     val pointId: String,
     val field: String,
+    val type: String,
     val value: OfflineFieldValue
 )

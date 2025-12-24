@@ -35,6 +35,7 @@ import com.sleetworks.serenity.android.newone.data.repositories.remote.FirebaseR
 import com.sleetworks.serenity.android.newone.data.repositories.remote.ImageRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.PointRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.UserRemoteRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.remote.VideoRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.WorkspaceRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CommentLocalRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CustomFieldRepository
@@ -55,6 +56,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.remote.Comment
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.VideoRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
 import dagger.Module
 import dagger.Provides
@@ -136,8 +138,11 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideUserRepository(assigneeDao: AssigneeDao,database: PinpointDatabase): UserRepository {
-        return UserRepositoryImpl(assigneeDao,database)
+    fun provideUserRepository(
+        assigneeDao: AssigneeDao,
+        database: PinpointDatabase
+    ): UserRepository {
+        return UserRepositoryImpl(assigneeDao, database)
     }
 
     @Provides
@@ -207,6 +212,15 @@ object RepositoryModule {
     @Singleton
     fun provideReactionRepository(reactionDao: ReactionDao): ReactionLocalRepository {
         return ReactionLocalRepositoryImpl(reactionDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideVideoRemoteRepository(
+        @ApplicationContext context: Context,
+        retrofitProvider: RetrofitProvider
+    ): VideoRemoteRepository {
+        return VideoRemoteRepositoryImpl(context, retrofitProvider)
     }
 
 }

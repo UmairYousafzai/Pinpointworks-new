@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.di
 
 import android.content.Context
+import com.sleetworks.serenity.android.newone.data.datasource.VideoStore
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import dagger.Module
 import dagger.Provides
@@ -15,6 +16,10 @@ object StoreModule {
     @Provides
      fun provideUserImageStore(@ApplicationContext context: Context): UserImageStore {
        return UserImageStore(context)
+    }
+    @Provides
+     fun provideVideoStore(@ApplicationContext context: Context): VideoStore {
+       return VideoStore(context)
     }
 
 

@@ -14,5 +14,10 @@ object CONSTANTS {
     ///dialog type
     const val LOGOUT="logout"
     const val UNAUTHORIZED= "unauthorized"
+    const val DELETE= "delete"
+    const val IMAGE= "image"
+    const val VIDEO= "video"
+    const val NONE= "none"
+
 
 }

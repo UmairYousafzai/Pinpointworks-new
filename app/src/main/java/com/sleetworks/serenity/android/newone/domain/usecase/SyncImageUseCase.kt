@@ -127,7 +127,7 @@ class SyncImageUseCase @Inject constructor(
 
     private suspend fun downloadOriginals(images: List<Pair<String, String>>, workspaceId: String) {
         coroutineScope {
-            images.chunked(5).forEach { chunk ->
+            images.chunked(10).forEach { chunk ->
                 chunk.map { (pointTitle, imageId) ->
                     _loader.value = Pair("Syncing images - $pointTitle ", true)
 

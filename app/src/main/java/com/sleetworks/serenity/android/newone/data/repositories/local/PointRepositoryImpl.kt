@@ -1,6 +1,7 @@
 package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.PointDao
+import com.sleetworks.serenity.android.newone.data.mappers.toEntity
 import com.sleetworks.serenity.android.newone.data.mappers.toInsertPoint
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
 import com.sleetworks.serenity.android.newone.data.models.local.entities.OfflineModifiedPointFields
@@ -20,6 +21,10 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
 
     override suspend fun insertPoint(point: PointDomain) {
         pointDao.upsertPointWithChildren(point.toInsertPoint())
+    }
+
+    override suspend fun insertPointDetailsOnly(point: PointDomain) {
+        pointDao.insertPoint(point.toEntity())
     }
 
     override suspend fun insertPoints(points: List<Point>) {
@@ -79,6 +84,15 @@ class PointRepositoryImpl @Inject constructor(val pointDao: PointDao) :
 
         return pointDao.deleteModifiedFieldByPointId(pointId)
 
+    }
+
+    override suspend fun deleteModifiedFieldById(id: Int): Int {
+        return pointDao.deleteModifiedFieldById(id)
+    }
+
+
+    override suspend fun deleteModifiedFieldByFieldValue(value: String): Int {
+        return pointDao.deleteModifiedFieldByFieldValue(value)
     }
 
 }

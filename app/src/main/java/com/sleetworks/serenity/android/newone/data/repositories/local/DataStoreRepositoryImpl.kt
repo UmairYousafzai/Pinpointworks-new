@@ -1,12 +1,15 @@
 package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.google.gson.Gson
 import com.sleetworks.serenity.android.newone.data.models.local.datastore.UserPreference
+import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.User
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.DataStoreRepository
 import com.sleetworks.serenity.android.newone.utils.PREF_AUTH_TOKEN
 import com.sleetworks.serenity.android.newone.utils.PREF_EMAIL
@@ -14,6 +17,7 @@ import com.sleetworks.serenity.android.newone.utils.PREF_FIRST_SYNC
 import com.sleetworks.serenity.android.newone.utils.PREF_IS_LOGIN
 import com.sleetworks.serenity.android.newone.utils.PREF_PASSWORD
 import com.sleetworks.serenity.android.newone.utils.PREF_POINT_SYNC_TIMESTAMP
+import com.sleetworks.serenity.android.newone.utils.PREF_USER
 import com.sleetworks.serenity.android.newone.utils.PREF_USER_ID
 import com.sleetworks.serenity.android.newone.utils.PREF_USER_IMAGE_ID
 import com.sleetworks.serenity.android.newone.utils.PREF_USER_NAME
@@ -34,6 +38,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 class DataStoreRepositoryImpl @Inject constructor(val context: Context) : DataStoreRepository {
+
+    val TAG="DataStoreRepositoryImpl"
 
     val externalScope = CoroutineScope(Dispatchers.Default)
     override val authTokenFlow: StateFlow<String?> = context.dataStore.data.map {
@@ -179,6 +185,22 @@ class DataStoreRepositoryImpl @Inject constructor(val context: Context) : DataSt
             preferences[PREF_IS_LOGIN] = user.isLogin
             preferences[PREF_USER_IMAGE_ID] = user.imageID
 
+        }
+    }
+
+    override suspend fun saveUser(user: User) {
+        context.dataStore.edit { preferences ->
+            preferences[PREF_USER] = Gson().toJson(user)
+        }
+    }
+
+    override suspend fun getUser(): User? {
+        val preferences = context.dataStore.data.first()
+        return try {
+            Gson().fromJson(preferences[PREF_USER], User::class.java)
+        } catch (e: Exception) {
+            Log.e(TAG, "getUser: ", e)
+            null
         }
     }
 

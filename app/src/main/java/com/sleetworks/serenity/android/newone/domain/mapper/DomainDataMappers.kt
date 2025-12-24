@@ -48,8 +48,7 @@ fun CommentEntity.toDomain(): Comment {
         tags = tags,
         totalBytes = totalBytes,
         type = type,
-        workspaceRef = workspaceRef
-
+        workspaceRef = workspaceRef,
     )
 }
 
@@ -64,8 +63,10 @@ fun CommentWithReactions.toDomain(): CommentDomain {
         totalBytes = comment.totalBytes,
         type = comment.type,
         workspaceRef = comment.workspaceRef,
-        reactions = reactions?.toModel()
-
+        reactions = reactions?.toModel(),
+        addedTime = comment.addedTime,
+        mentions = emptyList(),
+        author = comment.author
     )
 }
 
@@ -99,12 +100,11 @@ fun PointWithRelations.toDomain(): PointDomain {
     )
 }
 
-fun Image.toDomain(): LocalImage
-{
+fun Image.toDomain(): LocalImage {
     return LocalImage(
-        caption = caption?:"",
+        caption = caption ?: "",
         id = id,
-        type = type?:"",
+        type = type ?: "",
         imageLocalPath = ""
     )
 }

@@ -2,6 +2,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.remote
 
 import android.content.Context
 import com.sleetworks.serenity.android.newone.data.datasource.remote.ApiService
+import com.sleetworks.serenity.android.newone.data.models.remote.request.AddCommentRequest
 import com.sleetworks.serenity.android.newone.data.models.remote.response.ApiResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
@@ -15,6 +16,15 @@ class CommentRemoteRepositoryImpl @Inject constructor(
     private val context: Context,
     private val retrofitProvider: RetrofitProvider
 ) : CommentRemoteRepository {
+    override suspend fun addComment(
+        pointId: String,
+        commentRequest: AddCommentRequest
+    ): Resource<ApiResponse<Comment>> {
+
+        return safeApiCall(context){
+            retrofitProvider.getRetrofit().create(ApiService::class.java).addComment(pointId,commentRequest)
+        }
+    }
 
 
     override suspend fun getPointComments(pointId: String): Resource<ApiResponse<List<Comment>>> {

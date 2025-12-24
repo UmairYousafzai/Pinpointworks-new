@@ -2,6 +2,7 @@ package com.sleetworks.serenity.android.newone.data.repositories.local
 
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.CommentDao
 import com.sleetworks.serenity.android.newone.data.mappers.toEntity
+import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.CommentLocalRepository
@@ -11,6 +12,9 @@ class CommentLocalRepositoryImpl @Inject constructor(
     val commentDao: CommentDao,
 ) :
     CommentLocalRepository {
+    override suspend fun insertComment(comment: CommentEntity) {
+        commentDao.insertComment(comment)
+    }
 
 
     override suspend fun insertComments(comments: List<Comment>) {

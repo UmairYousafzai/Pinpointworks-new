@@ -95,4 +95,10 @@ interface PointDao {
 
     @Query("DELETE FROM offline_modified_point_fields WHERE pointId IN (:pointId)")
     suspend fun deleteModifiedFieldByPointId(pointId: String): Int
+
+    @Query("DELETE FROM offline_modified_point_fields WHERE id IN (:id)")
+    suspend fun deleteModifiedFieldById(id: Int): Int
+
+    @Query("DELETE FROM offline_modified_point_fields WHERE field IN (:value)")
+    suspend fun deleteModifiedFieldByFieldValue(value: String): Int
 }
