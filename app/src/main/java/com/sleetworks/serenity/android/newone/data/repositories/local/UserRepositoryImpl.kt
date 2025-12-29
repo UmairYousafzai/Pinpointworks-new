@@ -4,6 +4,7 @@ import com.sleetworks.serenity.android.newone.data.datasource.local.PinpointData
 import com.sleetworks.serenity.android.newone.data.datasource.local.dao.AssigneeDao
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao, val database: PinpointDatabase) : UserRepository {
@@ -26,6 +27,10 @@ class UserRepositoryImpl @Inject constructor(val userDao: AssigneeDao, val datab
 
     override suspend fun getAllUsers(): List<AssigneeEntity> {
         return userDao.getAllUsers()
+    }
+
+    override  fun getAllUsersFlow(): Flow<List<AssigneeEntity>> {
+        return userDao.getAllUsersFlow()
     }
 
     override suspend fun clearDb() {

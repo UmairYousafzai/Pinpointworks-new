@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AssigneeDao {
@@ -22,4 +23,7 @@ interface AssigneeDao {
 
     @Query("SELECT * FROM assignee")
     suspend fun getAllUsers(): List<AssigneeEntity>
+
+    @Query("SELECT * FROM assignee")
+    fun getAllUsersFlow(): Flow<List<AssigneeEntity>>
 }

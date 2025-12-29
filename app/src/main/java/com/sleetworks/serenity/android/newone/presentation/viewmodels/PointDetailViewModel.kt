@@ -344,32 +344,6 @@ class PointDetailViewModel @Inject constructor(
         _error.value = message
     }
 
-    fun getPointComments() {
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = commentRepository.getPointComments(pointID.value)
-
-            when (result) {
-                is Resource.Success -> {
-
-                    result.data.entity?.let {
-                        commentLocalRepository.insertComments(it)
-                    }
-
-                }
-
-                is Resource.Error -> {
-                    _error.emit(result.apiException.message ?: "Unknown Error")
-                }
-
-                else -> {}
-
-            }
-
-        }
-
-
-    }
 
     fun updatePointFields(
         fields: Map<String, Any>,
@@ -846,7 +820,7 @@ class PointDetailViewModel @Inject constructor(
                     false
                 )
             }
-            
+
             if (videos.isNotEmpty()) {
                 uploadVideos(videos, false)
             }
@@ -1441,14 +1415,14 @@ class PointDetailViewModel @Inject constructor(
                 uris.forEachIndexed { index, uri ->
                     try {
                         val videoId = UUID.randomUUID().toString()
-                        
+
                         // Copy URI to temp file for VideoCompressor (library needs File, not URI)
                         // Use external files directory which is more accessible to native code
-                        val tempDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES) 
+                        val tempDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
                             ?: context.filesDir
                         val tempVideoFile = File.createTempFile("temp_video_", ".mp4", tempDir)
                         Log.d(TAG, "Created temp file: ${tempVideoFile.absolutePath}")
-                        
+
                         context.contentResolver.openInputStream(uri)?.use { inputStream ->
                             FileOutputStream(tempVideoFile).use { outputStream ->
                                 inputStream.copyTo(outputStream)
@@ -1460,42 +1434,42 @@ class PointDetailViewModel @Inject constructor(
                         if (!tempVideoFile.exists() || tempVideoFile.length() == 0L) {
                             throw Exception("Video file is invalid after copying")
                         }
-                        
+
                         Log.d(TAG, "Temp file created. Size: ${tempVideoFile.length()} bytes, Path: ${tempVideoFile.absolutePath}")
-                        
+
                         // Ensure file is fully written and accessible
                         tempVideoFile.setReadable(true, false)
                         tempVideoFile.setWritable(true, false)
-                        
+
                         // Small delay to ensure file system has synced
                         delay(100)
-                        
+
                         // Double-check file is still accessible
                         if (!tempVideoFile.exists() || !tempVideoFile.canRead()) {
                             throw Exception("Video file became inaccessible after creation")
                         }
-                        
+
                         // Create output file for compressed video (use same directory as input)
                         val compressedFile = File.createTempFile("compressed_$videoId", ".mp4", tempDir)
                         compressedFile.setWritable(true, false)
-                        
+
                         // Compress video using VideoCompressor
                         try {
                             Log.d(TAG, "Starting video compression. Input file: ${tempVideoFile.absolutePath}, exists: ${tempVideoFile.exists()}, readable: ${tempVideoFile.canRead()}")
-                            
+
                             // Final verification before compression
                             if (!tempVideoFile.exists()) {
                                 throw Exception("Input video file does not exist")
                             }
-                            
+
                             if (!tempVideoFile.canRead()) {
                                 throw Exception("Input video file is not readable")
                             }
-                            
+
                             if (tempVideoFile.length() == 0L) {
                                 throw Exception("Input video file is empty")
                             }
-                            
+
                             // Use VideoCompressor with File (library requirement)
                             VideoCompressor.compress(
                                 context = context,
@@ -1504,26 +1478,26 @@ class PointDetailViewModel @Inject constructor(
                                 onMetadataDecoded = { compressor, metadata ->
                                     try {
                                         Log.d(TAG, "Metadata decoded. Original dimensions: ${metadata.actualWidth}x${metadata.actualHeight}")
-                                        
+
                                         // Calculate target size (half of original, but ensure even numbers)
                                         // MediaCodec requires even dimensions
                                         var targetWidth = (metadata.actualWidth / 2)
                                         var targetHeight = (metadata.actualHeight / 2)
-                                        
+
                                         // Ensure dimensions are even (required by MediaCodec)
                                         if (targetWidth % 2 != 0) targetWidth--
                                         if (targetHeight % 2 != 0) targetHeight--
-                                        
+
                                         // Constrain to reasonable limits
                                         targetWidth = targetWidth.coerceIn(320, 1920)
                                         targetHeight = targetHeight.coerceIn(240, 1080)
-                                        
+
                                         // Ensure still even after constraining
                                         if (targetWidth % 2 != 0) targetWidth--
                                         if (targetHeight % 2 != 0) targetHeight--
-                                        
+
                                         Log.d(TAG, "Target compression dimensions: ${targetWidth}x${targetHeight}")
-                                        
+
                                         // Build compression settings
                                         CompressionSettings.Builder()
                                             .setTargetSize(
@@ -1548,25 +1522,25 @@ class PointDetailViewModel @Inject constructor(
                                     }
                                 }
                             )
-                            
+
                             // Wait longer for compression to complete (compression can take time)
                             var attempts = 0
                             while (attempts < 40 && (!compressedFile.exists() || compressedFile.length() == 0L)) {
                                 delay(500)
                                 attempts++
                             }
-                            
+
                             // Verify the compressed file was created and has content
                             if (!compressedFile.exists()) {
                                 throw Exception("Video compression failed: Output file was not created after ${attempts * 500}ms")
                             }
-                            
+
                             if (compressedFile.length() == 0L) {
                                 throw Exception("Video compression failed: Output file is empty")
                             }
-                            
+
                             Log.d(TAG, "Video compression successful. Compressed: ${compressedFile.length()} bytes")
-                            
+
                         } catch (e: Exception) {
                             Log.e(TAG, "Video compression error: ${e.message}", e)
                             e.printStackTrace()
@@ -1576,18 +1550,18 @@ class PointDetailViewModel @Inject constructor(
                             }
                             throw Exception("Video compression failed: ${e.message ?: "Unknown error"}")
                         }
-                        
+
                         // Save compressed video to storage
                         val originalFile = videoStore.getOriginalFileReference(_workspaceID.value!!,videoId)
                         originalFile.parentFile?.mkdirs()
                         compressedFile.copyTo(originalFile, overwrite = true)
-                        
+
                         // Clean up temporary files
                         tempVideoFile.delete()
                         compressedFile.delete()
-                        
+
                         newVideos.add(videoId to originalFile)
-                        
+
                     } catch (e: Exception) {
                         Log.e(TAG, "Error processing video ${index + 1}: ${e.message}", e)
                     }
@@ -1706,12 +1680,12 @@ class PointDetailViewModel @Inject constructor(
             point.videos.add(localVideo)
             offlineVideos.add(localVideo)
         }
-        
+
         val updatedPoint = point.copy(
             videos = point.videos,
             isModified = true
         )
-        
+
         // Convert videos to offline field value
         val convertedValue = offlineVideos.convertToOfflineFieldValue()
         pointRepository.insertModifiedField(

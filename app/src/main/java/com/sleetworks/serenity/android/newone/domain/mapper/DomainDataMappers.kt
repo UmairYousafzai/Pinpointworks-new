@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.domain.mapper
 import com.sleetworks.serenity.android.newone.data.mappers.toModel
 import com.sleetworks.serenity.android.newone.data.models.local.CommentWithReactions
 import com.sleetworks.serenity.android.newone.data.models.local.PointWithRelations
+import com.sleetworks.serenity.android.newone.data.models.local.entities.AssigneeEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.CommentEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.customField.PointCustomFieldEntity
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointAssigneeEntity
@@ -10,6 +11,7 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
+import com.sleetworks.serenity.android.newone.domain.models.AssigneeDomain
 import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
@@ -106,5 +108,16 @@ fun Image.toDomain(): LocalImage {
         id = id,
         type = type ?: "",
         imageLocalPath = ""
+    )
+}
+
+fun AssigneeEntity.toDomain(): AssigneeDomain {
+    return AssigneeDomain(
+        id = id,
+        caption = caption,
+        primaryImageId = primaryImageId,
+        email = email,
+        type = type,
+        workspaceId = workspaceId
     )
 }
