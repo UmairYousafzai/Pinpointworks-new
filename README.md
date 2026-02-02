@@ -78,13 +78,8 @@ The app requires the following permissions:
 - External storage (read/write)
 - Media images (Android 13+)
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## License
 
-[Add your license information here]
 
 ## Contact
 
