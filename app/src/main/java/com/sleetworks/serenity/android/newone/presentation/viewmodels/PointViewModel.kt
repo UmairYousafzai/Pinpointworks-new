@@ -34,6 +34,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRe
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.usecase.DownloadUsersAvatarUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncImageUseCase
 import com.sleetworks.serenity.android.newone.presentation.common.UIEvent
 import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
@@ -47,7 +48,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,29 +60,30 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class PointViewModel @Inject constructor(
-    val syncDetailRepository: SyncDetailRepository,
-    val pointRepository: PointRepository,
-    val pointRemoteRepository: PointRemoteRepository,
-    val workspaceRemoteRepository: WorkspaceRemoteRepository,
-    val workspaceRepository: WorkspaceRepository,
-    val siteRepository: SiteRepository,
-    val customFieldRepository: CustomFieldRepository,
-    val shareRepository: ShareRepository,
-    val userRemoteRepository: UserRemoteRepository,
-    val userRepository: UserRepository,
-    val userImageStore: UserImageStore,
-    val imageRepository: ImageRemoteRepository,
-    val dataStoreRepository: DataStoreRepository,
+    private val syncDetailRepository: SyncDetailRepository,
+    private val pointRepository: PointRepository,
+    private val pointRemoteRepository: PointRemoteRepository,
+    private val workspaceRemoteRepository: WorkspaceRemoteRepository,
+    private val workspaceRepository: WorkspaceRepository,
+    private val siteRepository: SiteRepository,
+    private val customFieldRepository: CustomFieldRepository,
+    private val shareRepository: ShareRepository,
+    private val userRemoteRepository: UserRemoteRepository,
+    private val userRepository: UserRepository,
+    private val userImageStore: UserImageStore,
+    private val imageRepository: ImageRemoteRepository,
+    private val dataStoreRepository: DataStoreRepository,
     private val syncImagesUseCase: SyncImageUseCase,
+    private val downloadUsersAvatarUseCase: DownloadUsersAvatarUseCase,
     val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -575,8 +576,6 @@ class PointViewModel @Inject constructor(
             } catch (e: Exception) {
 
             }
-//            _loader.emit(Pair("Logging out.....", false))
-
         }
 
     }
@@ -600,145 +599,21 @@ class PointViewModel @Inject constructor(
         }
     }
 
-//    suspend fun downloadThumbnails(points: List<PointDomain>) {
-//
-//        coroutineScope {
-//            var completed = 0
-//            val total = points.size
-//            val workspaceId = workspaceID.value
-//
-//            points.chunkedBy(10).forEach { chunk ->
-//
-//                chunk.map { point ->
-//
-//                    async(Dispatchers.IO) {
-//                        _loader.value = Pair("Syncing thumbnails - ${point.title}", true)
-//                        val result = imageRepository.getImagesForPoint(point.id)
-//
-//                        when (result) {
-//                            is Resource.Error -> {
-//                                Log.e(TAG, "downloadThumbnails: ", result.apiException)
-//                            }
-//
-//                            Resource.Loading -> {
-//
-//                            }
-//
-//                            is Resource.Success<ApiResponse<Map<String, String>>> -> {
-//                                result.data.entity?.forEach { entry ->
-//
-//                                    userImageStore.saveImage(entry.key, entry.value, workspaceId!!)
-//                                }
-//                            }
-//                        }
-//                        synchronized(this) {
-//                            completed++
-//                        }
-//                    }
-//
-//                }.awaitAll()
-//
-//
-//                _loader.value = Pair("", false)
-//
-//
-//            }
-//        }
-//
-//    }
-//
-//    suspend fun downloadImages(imagePairs: List<Pair<String, String>>) {
-//
-//
-//        coroutineScope {
-//            var completed = 0
-//            val total = imagePairs.size
-//            val workspaceId = workspaceID.value
-//
-//            imagePairs.chunkedBy(10).forEach { chunk ->
-//
-//                chunk.map { image ->
-//
-//                    async(Dispatchers.IO) {
-//                        _loader.value = Pair("Syncing thumbnails - ${image.first}", true)
-//                        val result = imageRepository.getLargeImage(image.second)
-//
-//                        when (result) {
-//                            is Resource.Error -> {
-//                                Log.e(TAG, "downloadThumbnails: ", result.apiException)
-//                            }
-//
-//                            Resource.Loading -> {
-//
-//                            }
-//
-//                            is Resource.Success<ResponseBody> -> {
-//
-//                                userImageStore.saveLargeImage(
-//                                    image.second,
-//                                    result.data.byteStream(),
-//                                    workspaceId!!,
-//                                    "$workspaceId/images/original/"
-//                                )
-//                            }
-//                        }
-//                        synchronized(this) {
-//                            completed++
-//                        }
-//                    }
-//
-//                }.awaitAll()
-//
-//
-//                _loader.value = Pair("", false)
-//
-//
-//            }
-//        }
-//    }
-
 
     fun downloadUsersAvatar() {
 
         usersAvatarSync = viewModelScope.launch(Dispatchers.IO) {
-            val assignees = userRepository.getUserByWorkspaceId(_workspaceID.value ?: "")
-            val users = assignees.filter {
-                userImageStore.getAvatarFile(it.primaryImageId) == null
-
-            }
-
-            users.map { assignee ->
-
-                async {
-                    val result = imageRepository.downloadImageThumbFile(assignee.primaryImageId)
-                    when (result) {
-                        is Resource.Success -> {
-                            try {
-                                val outputStream =
-                                    userImageStore.getAvatarOutputStream(assignee.primaryImageId)
-                                val inputStream = BufferedInputStream(result.data.byteStream())
-                                var b: Int
-                                while ((inputStream.read().also { b = it }) != -1) {
-                                    outputStream.write(b)
-                                }
-                                outputStream.flush()
-                            } catch (e: Exception) {
-                                Log.e(TAG, "downloadUserAvatar: ", e)
-                            }
-                        }
-
-
-                        is Resource.Error -> {
-                            Log.e(TAG, "downloadUserAvatar: ", result.apiException)
-                        }
-
-                        Resource.Loading -> {}
-                    }
+            try {
+                val currentWorkspaceId = _workspaceID.value
+                if (!currentWorkspaceId.isNullOrEmpty()) {
+                    downloadUsersAvatarUseCase(currentWorkspaceId,user.value.id)
                 }
-
-            }.awaitAll()
+            } catch (e: CancellationException) {
+                Log.d(TAG, "Avatar sync was cancelled successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Download failed", e)
+            }
         }
-
 
     }
 

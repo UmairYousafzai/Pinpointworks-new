@@ -35,6 +35,7 @@ fun AppTopBar(
     drawerState: DrawerState? = null,
     title: String = "",
     subTitle: String = "",
+    leadingIcon: Int =  R.drawable.ic_hamburger,
     shouldDrawerIntegrate: Boolean = false,
     actionIcons: List<Pair<String, ImageVector>> = emptyList(),
     actionClick: (String) -> Unit = {}
@@ -67,11 +68,10 @@ fun AppTopBar(
                     R.drawable.ic_hamburger
                 } else {
                     R.drawable.ic_back_solid
-
                 }
 
                 Icon(
-                    painter = painterResource(icon),
+                    painter = painterResource(leadingIcon),
                     contentDescription = "Menu",
                     tint = Color.White,
                     modifier = Modifier.size(24.dp)

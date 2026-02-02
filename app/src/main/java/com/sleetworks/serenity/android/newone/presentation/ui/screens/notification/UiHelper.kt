@@ -1,77 +1,108 @@
 //package com.sleetworks.serenity.android.newone.presentation.ui.screens.notification
 //
-//import CircularImage
+//import android.graphics.Color
 //import android.os.Build
 //import android.text.Html
 //import android.util.Log
 //import android.view.View
 //import android.widget.ImageView
 //import android.widget.TextView
-//import androidx.compose.foundation.Image
-//import androidx.compose.foundation.background
-//import androidx.compose.foundation.clickable
-//import androidx.compose.foundation.layout.Arrangement
-//import androidx.compose.foundation.layout.Column
-//import androidx.compose.foundation.layout.Row
-//import androidx.compose.foundation.layout.Spacer
-//import androidx.compose.foundation.layout.fillMaxWidth
-//import androidx.compose.foundation.layout.height
-//import androidx.compose.foundation.layout.padding
-//import androidx.compose.foundation.layout.size
-//import androidx.compose.foundation.layout.width
-//import androidx.compose.material3.Card
-//import androidx.compose.material3.CardDefaults
-//import androidx.compose.material3.MaterialTheme
-//import androidx.compose.material3.Text
-//import androidx.compose.runtime.Composable
-//import androidx.compose.runtime.collectAsState
-//import androidx.compose.runtime.getValue
-//import androidx.compose.runtime.mutableStateOf
-//import androidx.compose.runtime.remember
-//import androidx.compose.runtime.setValue
-//import androidx.compose.ui.Alignment
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.graphics.Color
-//import androidx.compose.ui.res.painterResource
-//import androidx.compose.ui.text.font.FontWeight
-//import androidx.compose.ui.unit.dp
-//import androidx.compose.ui.unit.sp
-//import com.sleetworks.serenity.android.newone.R
+//import com.sleetworks.serenity.android.newone.data.models.remote.response.notification.Notification
 //import com.sleetworks.serenity.android.newone.domain.models.AssigneeDomain
-//import com.sleetworks.serenity.android.newone.domain.models.NotificationDomain
 //import com.sleetworks.serenity.android.newone.presentation.model.PushNotificationFieldType
-//import com.sleetworks.serenity.android.newone.presentation.viewmodels.NotificationViewModel
-//import com.sleetworks.serenity.android.newone.utils.calculateElapsedTime
+//import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemPriority
+//import com.sleetworks.serenity.android.newone.presentation.ui.model.PointItemStatus
+//
+// fun getNotificationReason(notificationReason: String): String {
+//    return when (notificationReason) {
+//        "created" -> {
+//            "you created"
+//        }
+//
+//        "assigned" -> {
+//            "you are assigned"
+//        }
+//
+//        else -> {
+//            "you are subscribed"
+//        }
+//    }
+//}
 //
 //
-//@Composable
-//fun NotificationItem(
-//    viewModel: NotificationViewModel,
-//    notification: NotificationDomain,
-//    author: AssigneeDomain,
-//    onClick: () -> Unit
+// fun getPriorityType(type: String): String {
+//    val priority: PointItemPriority? = PointItemPriority.from(type)
+//     return if (priority === PointItemPriority.Low) {
+//         "<span style='color:#4da0e5'><b>Low</b></span>"
+//     } else if (priority === PointItemPriority.High) {
+//         "<span style='color:#e54f50'><b>High</b></span>"
+//     } else {
+//         "<span style='color:#ffce29'><b>Medium</b></span>"
+//     }
+//}
+//
+//
+// fun getStatusType(type: String): String {
+//    val status: PointItemStatus? = PointItemStatus.from(type)
+//    return if (status === PointItemStatus.InProgress) {
+//        "<span style='color:#6bc8f9'><b>In Progress</b></span>"
+//    } else if (status === PointItemStatus.OnHold) {
+//        "<span style='color:#ff9801'><b>On Hold</b></span>"
+//    } else if (status === PointItemStatus.ToReview) {
+//        "<span style='color:#f3db12'><b>To Review</b></span>"
+//    } else if (status === PointItemStatus.Canceled) {
+//        "<span style='color:#838b99'><b>Canceled</b></span>"
+//    } else if (status === PointItemStatus.Completed) {
+//        "<span style='color:#65b92e'><b>Completed</b></span>"
+//    } else {
+//        "<span style='color:#3170a7'><b>Open</b></span>"
+//    }
+//}
+//
+// fun getAttachmentType(fieldType: PushNotificationFieldType?): String {
+//    return if (fieldType === PushNotificationFieldType.IMAGES
+//        || fieldType === PushNotificationFieldType.IMAGES_360
+//    ) {
+//        "an <b>Image</b>"
+//    } else if (fieldType === PushNotificationFieldType.VIDEOS) {
+//        "a <b>Video</b>"
+//    } else if (fieldType === PushNotificationFieldType.DOCUMENTS) {
+//        "a <b>File</b>"
+//    } else {
+//        "<b>an Attachment</b>"
+//    }
+//}
+//
+// fun getMentionType(label: String): String {
+//    return if (label.isEmpty()) {
+//        "a <b>Comment</b>"
+//    } else if (label == "Description") {
+//        "a <b>$label</b>"
+//    } else {
+//        "<b>$label</b>"
+//    }
+//}
+//
+//private fun setContentBody(
+//    notificationItem: Notification,
+//    fieldType: PushNotificationFieldType,
+//    users: Map<String, AssigneeDomain>
 //) {
-//
-//    val users by viewModel.workspaceUser.collectAsState()
-//    var removeIconType by remember { mutableStateOf(0) }
-//    var notificationIcon by remember { mutableStateOf(0) }
-//    var showRemoveIconType by remember { mutableStateOf(false) }
-//    val fieldType = PushNotificationFieldType.fromString(notification.pushNotificationType)
 //    var label = ""
 //    var oldStringValue = ""
 //    var newStringValue: String? = ""
 //
-//    val notificationReason = getNotificationReason(notification.notificationReason)
+//    val notificationReason = getNotificationReason(notificationItem.notificationReason)
 //
 //
 //
-//    label = notification.changeBody.label
-//    if (notification.changeBody.oldValue is String) {
-//        oldStringValue = notification.changeBody.oldValue
+//    label = notificationItem.changeBody.label
+//    if (notificationItem.changeBody.oldValue is String) {
+//        oldStringValue = notificationItem.changeBody.oldValue
 //    }
 //
-//    if (notification.changeBody.newValue is String) {
-//        newStringValue = notification.changeBody.newValue as String?
+//    if (notificationItem.changeBody.newValue is String) {
+//        newStringValue = notificationItem.changeBody.newValue as String?
 //    }
 //
 //
@@ -120,9 +151,9 @@
 //            val newListValue: MutableList<String?>
 //            try {
 //                oldListValue =
-//                    notification.changeBody.oldValue as MutableList<String?>
+//                    notificationItem.changeBody.oldValue as MutableList<String?>
 //                newListValue =
-//                    notification.changeBody.newValue as MutableList<String?>
+//                    notificationItem.changeBody.newValue as MutableList<String?>
 //            } catch (e: Exception) {
 //                Log.e("Notification", "setContentBody: ", e)
 //                return
@@ -132,16 +163,17 @@
 //            val uniqueNewValueList: MutableList<String?> =
 //                getUniqueValues(newListValue, oldListValue, fieldType,users)
 //
-//
-//            if (fieldType === PushNotificationFieldType.TAGS) {
-//                notificationIcon = R.drawable.ic_notification_tags
-//                removeIconType = R.drawable.ic_notification_tags
+//            val removedIconView =
+//                notificationItem.findViewById<View?>(R.id.removeIconType) as ImageView
+//            if (fieldType === PushNotificationFieldType.tags) {
+//                notificationIv.setImageResource(R.drawable.ic_notification_tags)
+//                removedIconView.setImageResource(R.drawable.ic_notification_tags)
 //            } else {
-//                notificationIcon= R.drawable.ic_notification_assignees
-//                removeIconType =R.drawable.ic_notification_assignees
+//                notificationIv.setImageResource(R.drawable.ic_notification_assignees)
+//                removedIconView.setImageResource(R.drawable.ic_notification_assignees)
 //            }
 //
-//            if (uniqueNewValueList.isNotEmpty()) {
+//            if (uniqueNewValueList.size > 0) {
 //                notificationTypeText =
 //                    style + "Added</span> the following <b>" + label + "</b> to a point " + notificationReason + ":"
 //                val itemContainer: FlexboxLayout =
@@ -298,7 +330,7 @@
 //
 //        reminderDeleted -> {
 //            notificationIv.setVisibility(View.VISIBLE)
-//            notificationIv.setColorFilter(android.graphics.Color.RED)
+//            notificationIv.setColorFilter(Color.RED)
 //
 //            notificationItem.findViewById<View?>(R.id.valueChangedLayout).setVisibility(View.GONE)
 //            notificationTypeText =
@@ -320,119 +352,26 @@
 //        notificationTypeLabel.setText(Html.fromHtml(notificationTypeText))
 //        valueChangedLabel.setText(Html.fromHtml(valueChangedText))
 //    }
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable(onClick = onClick),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .padding(vertical = 6.dp)
-//        ) {
-//            val imageFile = viewModel.getUserAvatar(author.primaryImageId)
-//            // ---------- Avatar ----------
-//            CircularImage(userName = notification.creatorUserName, imageFile = imageFile,44)
+//}
 //
-//            // ---------- Details ----------
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(end = 12.dp)
-//            ) {
+// fun getUniqueValues(
+//    originalValues: MutableList<String?>,
+//    compareValues: MutableList<String?>,
+//    fieldType: PushNotificationFieldType?,
+//    users: Map<String, AssigneeDomain>
+//): MutableList<String?> {
+//    val uniqueValues: MutableList<String?> = ArrayList(originalValues)
+//    uniqueValues.removeAll(compareValues)
 //
-//                HeaderRow(author.caption, notification.timestampEpochMillis.calculateElapsedTime())
-//
-//                Spacer(Modifier.height(6.dp))
-//
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//
-//                    Column(
-//                        modifier = Modifier.weight(1f)
-//                    ) {
-//
-//                        NotificationTypeRow(notificationField.iconRes, notificationType)
-//
-//                        Spacer(Modifier.height(6.dp))
-//
-//                        if (addedItems.isNotEmpty()) {
-//                            ChipsRow(addedItems)
-//                        }
-//
-//                        if (removedItems.isNotEmpty()) {
-//                            Spacer(Modifier.height(6.dp))
-//                            ChipsRow(removedItems)
-//                        }
-//
-//                        Spacer(Modifier.height(6.dp))
-//
-//                        Text(
-//                            text = pointInfo,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            color = Color(0xFF24292D)
-//                        )
-//
-//                        Text(
-//                            text = siteInfo,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            color = Color(0xFF909DA7),
-//                            modifier = Modifier.padding(bottom = 12.dp)
-//                        )
-//                    }
-//
-//                    if (showLikeButton) {
-//                        LikeButton()
-//                    }
-//                }
-//            }
+//    if (fieldType === PushNotificationFieldType.ASSIGNEES) {
+//        val assigneeCaptions: MutableList<String?> = ArrayList<String?>()
+//        for (value in uniqueValues) {
+//            val assignee: AssigneeDomain? = users[value]
+//            if (assignee != null && assignee.caption.isNotEmpty()) assigneeCaptions.add(assignee.caption)
+//            else assigneeCaptions.add("(Deleted user)")
 //        }
+//        return assigneeCaptions
 //    }
-//}
 //
-//@Composable
-//private fun HeaderRow(userName: String, timeAgo: String) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(top = 12.dp, end = 6.dp, bottom = 6.dp),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Text(
-//            text = userName,
-//            fontSize = 16.sp,
-//            fontWeight = FontWeight.Bold,
-//            modifier = Modifier.weight(1f)
-//        )
-//
-//        Text(
-//            text = timeAgo,
-//            fontSize = 13.sp,
-//            color = Color(0xFF909DA7)
-//        )
-//    }
-//}
-//
-//@Composable
-//private fun NotificationTypeRow(iconRes: Int, label: String) {
-//    Row(
-//        verticalAlignment = Alignment.Top
-//    ) {
-//        Image(
-//            painter = painterResource(iconRes),
-//            contentDescription = null,
-//            modifier = Modifier.size(18.dp)
-//        )
-//
-//        Spacer(Modifier.width(6.dp))
-//
-//        Text(
-//            text = label,
-//            fontSize = 14.sp,
-//            color = Color.Black
-//        )
-//    }
+//    return uniqueValues
 //}

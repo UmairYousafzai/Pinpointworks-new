@@ -90,7 +90,7 @@ class SyncImageUseCase @Inject constructor(
                 point.images.forEach { image ->
                     val thumbnailFile = userImageStore.checkImage(workspaceId, "$workspaceId/images/thumb/", image.id)
                     if (!thumbnailFile.exists()) {
-                        thumbnailsToDownload.add(point) // Add the whole point for thumbnail download
+                        thumbnailsToDownload.add(point)
                     }
 
                     val originalFile = userImageStore.checkImage(workspaceId, "$workspaceId/images/original/", image.id)

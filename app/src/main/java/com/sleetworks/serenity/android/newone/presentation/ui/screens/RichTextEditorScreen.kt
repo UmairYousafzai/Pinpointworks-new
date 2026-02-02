@@ -30,6 +30,7 @@ import com.kevinnzou.web.WebViewNavigator
 import com.kevinnzou.web.WebViewState
 import com.kevinnzou.web.rememberWebViewNavigator
 import com.kevinnzou.web.rememberWebViewState
+import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.ui.components.AppTopBar
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.RichTextEditorViewModel
 
@@ -58,6 +59,7 @@ fun RichTextEditorScreen(
 
             AppTopBar(
                 title = fieldType,
+                leadingIcon = R.drawable.ic_back_solid,
                 actionIcons = listOf(
                     Pair("Done", Icons.Default.Done)
                 )

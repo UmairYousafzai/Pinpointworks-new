@@ -55,6 +55,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRe
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.VideoRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.WorkspaceRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.usecase.DownloadUserAvatarUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointImageUseCase
 import com.sleetworks.serenity.android.newone.presentation.common.toUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.CustomFieldTempUI
@@ -85,6 +86,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -124,6 +126,7 @@ class PointDetailViewModel @Inject constructor(
     private val userImageStore: UserImageStore,
     private val videoStore: VideoStore,
     private val syncPointImageUseCase: SyncPointImageUseCase,
+    private val downloadUserAvatarUseCase: DownloadUserAvatarUseCase,
     private val imageRemoteRepository: ImageRemoteRepository,
     private val videoRemoteRepository: VideoRemoteRepository,
     private val savedStateHandle: SavedStateHandle,
@@ -153,6 +156,8 @@ class PointDetailViewModel @Inject constructor(
     val fieldSuccess: StateFlow<Pair<String, Boolean>>
         get() = _fieldSuccess
 
+    private val _avatarUpdateSignal = MutableSharedFlow<String>()
+    val avatarUpdateSignal = _avatarUpdateSignal.asSharedFlow()
 
     private val _pointID: MutableStateFlow<String> = MutableStateFlow("")
     val pointID: StateFlow<String>
@@ -627,9 +632,9 @@ class PointDetailViewModel @Inject constructor(
 
     fun syncPointDetail() {
         viewModelScope.launch(Dispatchers.IO) {
-               Log.e("Point Sync", "Sync Start" )
+            Log.e("Point Sync", "Sync Start")
             syncPoint()
-            Log.e("Point Sync", "Sync complete" )
+            Log.e("Point Sync", "Sync complete")
 
         }
     }
@@ -761,7 +766,7 @@ class PointDetailViewModel @Inject constructor(
                         videoList.forEach { video ->
                             val videoFile = videoStore.getOriginalFileReference(
                                 workspaceID.value!!,
-                                video.id?:"",
+                                video.id ?: "",
                             )
                             if (videoFile.exists()) {
                                 videos.add(video.id!! to videoFile)
@@ -939,7 +944,11 @@ class PointDetailViewModel @Inject constructor(
     }
 
     fun getUserAvatar(imageID: String): File? {
-        return userImageStore.getAvatarFile(imageID)
+        val file = userImageStore.getAvatarFile(imageID)
+        if (file == null) {
+            downloadUserAvatar(imageID)
+        }
+        return file
     }
 
     suspend fun updateLocalReactions(reactions: MutableList<Pair<Int?, Reaction>>) {
@@ -1435,7 +1444,10 @@ class PointDetailViewModel @Inject constructor(
                             throw Exception("Video file is invalid after copying")
                         }
 
-                        Log.d(TAG, "Temp file created. Size: ${tempVideoFile.length()} bytes, Path: ${tempVideoFile.absolutePath}")
+                        Log.d(
+                            TAG,
+                            "Temp file created. Size: ${tempVideoFile.length()} bytes, Path: ${tempVideoFile.absolutePath}"
+                        )
 
                         // Ensure file is fully written and accessible
                         tempVideoFile.setReadable(true, false)
@@ -1450,12 +1462,16 @@ class PointDetailViewModel @Inject constructor(
                         }
 
                         // Create output file for compressed video (use same directory as input)
-                        val compressedFile = File.createTempFile("compressed_$videoId", ".mp4", tempDir)
+                        val compressedFile =
+                            File.createTempFile("compressed_$videoId", ".mp4", tempDir)
                         compressedFile.setWritable(true, false)
 
                         // Compress video using VideoCompressor
                         try {
-                            Log.d(TAG, "Starting video compression. Input file: ${tempVideoFile.absolutePath}, exists: ${tempVideoFile.exists()}, readable: ${tempVideoFile.canRead()}")
+                            Log.d(
+                                TAG,
+                                "Starting video compression. Input file: ${tempVideoFile.absolutePath}, exists: ${tempVideoFile.exists()}, readable: ${tempVideoFile.canRead()}"
+                            )
 
                             // Final verification before compression
                             if (!tempVideoFile.exists()) {
@@ -1477,7 +1493,10 @@ class PointDetailViewModel @Inject constructor(
                                 output = compressedFile,
                                 onMetadataDecoded = { compressor, metadata ->
                                     try {
-                                        Log.d(TAG, "Metadata decoded. Original dimensions: ${metadata.actualWidth}x${metadata.actualHeight}")
+                                        Log.d(
+                                            TAG,
+                                            "Metadata decoded. Original dimensions: ${metadata.actualWidth}x${metadata.actualHeight}"
+                                        )
 
                                         // Calculate target size (half of original, but ensure even numbers)
                                         // MediaCodec requires even dimensions
@@ -1496,7 +1515,10 @@ class PointDetailViewModel @Inject constructor(
                                         if (targetWidth % 2 != 0) targetWidth--
                                         if (targetHeight % 2 != 0) targetHeight--
 
-                                        Log.d(TAG, "Target compression dimensions: ${targetWidth}x${targetHeight}")
+                                        Log.d(
+                                            TAG,
+                                            "Target compression dimensions: ${targetWidth}x${targetHeight}"
+                                        )
 
                                         // Build compression settings
                                         CompressionSettings.Builder()
@@ -1539,7 +1561,10 @@ class PointDetailViewModel @Inject constructor(
                                 throw Exception("Video compression failed: Output file is empty")
                             }
 
-                            Log.d(TAG, "Video compression successful. Compressed: ${compressedFile.length()} bytes")
+                            Log.d(
+                                TAG,
+                                "Video compression successful. Compressed: ${compressedFile.length()} bytes"
+                            )
 
                         } catch (e: Exception) {
                             Log.e(TAG, "Video compression error: ${e.message}", e)
@@ -1552,7 +1577,8 @@ class PointDetailViewModel @Inject constructor(
                         }
 
                         // Save compressed video to storage
-                        val originalFile = videoStore.getOriginalFileReference(_workspaceID.value!!,videoId)
+                        val originalFile =
+                            videoStore.getOriginalFileReference(_workspaceID.value!!, videoId)
                         originalFile.parentFile?.mkdirs()
                         compressedFile.copyTo(originalFile, overwrite = true)
 
@@ -1589,6 +1615,7 @@ class PointDetailViewModel @Inject constructor(
             uri.scheme == "file" -> {
                 result = uri.path
             }
+
             uri.scheme == "content" -> {
                 // Try to get path, but don't throw if column doesn't exist
                 try {
@@ -1644,7 +1671,7 @@ class PointDetailViewModel @Inject constructor(
                                 Log.d(TAG, "Video uploaded successfully: ${uploadedVideo.id}")
                                 // Delete the modified field if it exists
                                 pointRepository.deleteModifiedFieldByFieldValue(
-                                    DefectFieldType.VIDEOS +_pointID.value
+                                    DefectFieldType.VIDEOS + _pointID.value
                                 )
                             } else {
                                 notUploadedVideoIds.add(newVideos[index])
@@ -1693,12 +1720,25 @@ class PointDetailViewModel @Inject constructor(
                 workspaceId = _workspaceID.value ?: "",
                 pointId = _pointID.value,
                 field = DefectFieldType.VIDEOS + _pointID.value,
-                type = DefectFieldType.VIDEOS+ _pointID.value,
+                type = DefectFieldType.VIDEOS + _pointID.value,
                 value = convertedValue,
             )
         )
         pointRepository.insertPoint(updatedPoint)
         refreshPoint()
+    }
+
+
+    fun downloadUserAvatar(imageId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                downloadUserAvatarUseCase(imageId)
+                _avatarUpdateSignal.emit(imageId)
+            } catch (e: Exception) {
+                Log.e(TAG, "downloadUserAvatar: ", e)
+            }
+
+        }
     }
 
 

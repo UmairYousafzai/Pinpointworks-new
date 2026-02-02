@@ -2,6 +2,10 @@ package com.sleetworks.serenity.android.newone.data.models.remote.response.notif
 
 data class ChangeBody(
     val label: String,
-    val newValue: List<NewValue>,
-    val oldValue: List<OldValue>
+    val cfFieldType: String,
+    val comment: String,
+    val commentId: String,
+    val newValue: Any,
+    val oldValue: Any,
+
 )

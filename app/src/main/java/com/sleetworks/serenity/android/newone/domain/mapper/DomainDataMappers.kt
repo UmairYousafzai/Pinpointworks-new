@@ -10,9 +10,11 @@ import com.sleetworks.serenity.android.newone.data.models.local.entities.point.P
 import com.sleetworks.serenity.android.newone.data.models.local.entities.point.PointTagEntity
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.Image
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
+import com.sleetworks.serenity.android.newone.data.models.remote.response.notification.Notification
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
 import com.sleetworks.serenity.android.newone.domain.models.AssigneeDomain
 import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
+import com.sleetworks.serenity.android.newone.domain.models.NotificationDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 
@@ -119,5 +121,24 @@ fun AssigneeEntity.toDomain(): AssigneeDomain {
         email = email,
         type = type,
         workspaceId = workspaceId
+    )
+}
+
+
+fun Notification.toDomain(): NotificationDomain {
+    return NotificationDomain(
+        id = this.id,
+        changeBody = this.changeBody,
+        creatorUserId = this.creatorUserId,
+        creatorUserName = this.creatorUserName,
+        markedAsRead = this.markedAsRead,
+        notificationReason = this.notificationReason,
+        pushNotificationType = this.pushNotificationType,
+        refObject = this.refObject,
+        siteName = this.siteName,
+        targetUserId = this.targetUserId,
+        timestampEpochMillis = this.timestampEpochMillis,
+        workspaceId = this.workspaceId,
+        reminderDetails = this.reminderDetails
     )
 }

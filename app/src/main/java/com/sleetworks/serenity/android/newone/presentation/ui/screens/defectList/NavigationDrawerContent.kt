@@ -40,10 +40,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.sleetworks.serenity.android.newone.BuildConfig
 import com.sleetworks.serenity.android.newone.R
 import com.sleetworks.serenity.android.newone.presentation.model.UserUiModel
 import com.sleetworks.serenity.android.newone.presentation.model.WorkspaceUiModel
+import com.sleetworks.serenity.android.newone.presentation.navigation.Screen
 import com.sleetworks.serenity.android.newone.presentation.ui.components.ConfirmationDialog
 import com.sleetworks.serenity.android.newone.presentation.viewmodels.PointViewModel
 import com.sleetworks.serenity.android.newone.ui.theme.BrightBlue
@@ -62,6 +64,7 @@ fun NavigationDrawerContent(
     scope: CoroutineScope,
     drawerState: DrawerState,
     pointViewModel: PointViewModel,
+    navController: NavController
 ) {
     val user by pointViewModel.user.collectAsState()
     val imageFile by pointViewModel.imageFile.collectAsState()
@@ -97,12 +100,19 @@ fun NavigationDrawerContent(
 
             Row(
                 modifier = Modifier
-                    .fillMaxWidth(), horizontalArrangement = Arrangement.Start,
+                    .fillMaxWidth()
+                    .clickable {
+                        scope.launch {
+                            drawerState.close()
+                        }
+                        navController.navigate(Screen.NotificationScreen.route)
+                    }, horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
                 Icon(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier
+                        .size(20.dp),
                     painter = painterResource(R.drawable.ic_bell_notification),
                     contentDescription = "Notification",
                     tint = null
@@ -155,10 +165,10 @@ fun NavigationDrawerContent(
             message = "Are you sure you want to logout?",
             dialogType = dialogType,
             onDismiss = {
-                showConfirmationDialog= false
+                showConfirmationDialog = false
             },
             onConfirm = {
-                showConfirmationDialog= false
+                showConfirmationDialog = false
                 scope.launch {
                     drawerState.close()
 

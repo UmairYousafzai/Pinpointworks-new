@@ -3,6 +3,7 @@ package com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDeta
 import CircularImage
 import android.Manifest
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -324,7 +325,12 @@ fun DefectDetailScreen(
 
     val fieldLoader by viewModel.fieldLoader.collectAsState()
     val fieldSuccess by viewModel.fieldSuccess.collectAsState()
-    val user by viewModel.user.collectAsState()
+
+    BackHandler {
+        if (!navController.popBackStack()) {
+            navController.navigate(Screen.DefectListScreen.route + "/" + false)
+        }
+    }
 
     LaunchedEffect(errorMessage) {
         if (errorMessage.isNotEmpty()) {
@@ -420,6 +426,7 @@ fun DefectDetailScreen(
                 .background(Color.White)
         ) {
             AppTopBar(
+                leadingIcon = R.drawable.ic_back_solid,
                 actionIcons = listOf(
                     Pair("Done", Icons.Default.Sync)
                 )
@@ -1771,7 +1778,13 @@ fun CommentItem(
     onLikeClick: (CommentDomain, Boolean) -> Unit
 ) {
     val user by viewModel.user.collectAsState()
+    val avatarSignal by viewModel.avatarUpdateSignal.collectAsState(initial = "")
     var isLikedByMe by remember { mutableStateOf(comment.reactions?.like?.contains(user.id) == true) }
+    val avatarFile = remember(avatarSignal) {
+        viewModel.getUserAvatar(
+            comment.header?.createdBy?.primaryImageId ?: comment.author?.images[0]?.id ?: ""
+        )
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1787,11 +1800,12 @@ fun CommentItem(
                 .weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val imageFile =
-                viewModel.getUserAvatar(
-                    comment.header?.createdBy?.primaryImageId ?: comment.author?.images[0]?.id ?: ""
-                )
-            CircularImage(comment.header?.createdBy?.caption ?: comment.author?.name, imageFile, 45)
+
+            CircularImage(
+                comment.header?.createdBy?.caption ?: comment.author?.name,
+                avatarFile,
+                45
+            )
             Spacer(modifier = Modifier.width(20.dp))
 
             var commentText = TextRichOptions

@@ -33,6 +33,7 @@ import com.sleetworks.serenity.android.newone.data.repositories.remote.AuthRemot
 import com.sleetworks.serenity.android.newone.data.repositories.remote.CommentRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.FirebaseRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.ImageRemoteRepositoryImpl
+import com.sleetworks.serenity.android.newone.data.repositories.remote.NotificationRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.PointRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.UserRemoteRepositoryImpl
 import com.sleetworks.serenity.android.newone.data.repositories.remote.VideoRemoteRepositoryImpl
@@ -54,6 +55,7 @@ import com.sleetworks.serenity.android.newone.domain.reporitories.local.Workspac
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.AuthRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.CommentRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.remote.NotificationRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.PointRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.UserRemoteRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.VideoRemoteRepository
@@ -221,6 +223,15 @@ object RepositoryModule {
         retrofitProvider: RetrofitProvider
     ): VideoRemoteRepository {
         return VideoRemoteRepositoryImpl(context, retrofitProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        @ApplicationContext context: Context,
+        retrofitProvider: RetrofitProvider
+    ): NotificationRepository {
+        return NotificationRepositoryImpl(context, retrofitProvider)
     }
 
 }

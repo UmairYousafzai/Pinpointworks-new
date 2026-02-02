@@ -11,6 +11,7 @@ import com.sleetworks.serenity.android.newone.presentation.ui.screens.RichTextEd
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.LoginScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.auth.SyncScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.defectList.DefectListScreen
+import com.sleetworks.serenity.android.newone.presentation.ui.screens.notification.NotificationScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.photo.EditPhotoScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.photo.PhotoViewScreen
 import com.sleetworks.serenity.android.newone.presentation.ui.screens.pointDetail.DefectDetailScreen
@@ -123,6 +124,16 @@ fun Navigation(
         ) { backStackEntry ->
 
             VideoPlayerScreen(
+                navController,
+                sharedViewModel = sharedViewModel
+            )
+        }
+
+        composable(
+            route = Screen.NotificationScreen.route,
+        ) { backStackEntry ->
+
+            NotificationScreen(
                 navController,
                 sharedViewModel = sharedViewModel
             )

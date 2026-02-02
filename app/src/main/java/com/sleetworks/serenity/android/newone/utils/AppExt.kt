@@ -358,3 +358,29 @@ fun File.readExifDataAsJson(): String {
         }.toString()
     }
 }
+
+ fun Long.calculateElapsedTime(): String {
+    val timeDifference = System.currentTimeMillis() - this
+
+    val minutesDifference = (timeDifference / (1000 * 60))
+    if (minutesDifference < 1) {
+        return "just now"
+    } else if (minutesDifference == 1L) {
+        return "a minute ago"
+    } else if (minutesDifference < 60) {
+        return "$minutesDifference minutes ago"
+    }
+
+    val hoursDifference = (minutesDifference / 60)
+    if (hoursDifference == 1L) {
+        return "an hour ago"
+    } else if (hoursDifference < 24) {
+        return "$hoursDifference hours ago"
+    }
+
+    val daysDifference = (hoursDifference / 24)
+    if (daysDifference == 1L) {
+        return "a day ago"
+    }
+    return "$daysDifference days ago"
+}

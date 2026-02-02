@@ -126,7 +126,7 @@ fun DefectListScreen(
         drawerState = drawerState,
         gesturesEnabled = false,
         drawerContent = {
-            NavigationDrawerContent(scope, drawerState, pointViewModel)
+            NavigationDrawerContent(scope, drawerState, pointViewModel, navController)
         }) {
         MainContent(pointViewModel, navController, drawerState)
 

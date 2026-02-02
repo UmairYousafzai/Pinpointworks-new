@@ -37,6 +37,8 @@ val TealBlue = Color(0xFF0099CC)
 val WarmRed = Color(0xFFE44F50)
 val Sunglow = Color(0xFFffce2d)
 val FreshGreen = Color(0xFF95d65b)
+val PaleBlue = Color(0xFFE9F3FC)
+val CoolMediumGray = Color(0xFF909DA7)
 
 val BlackOpacity70 = Color(0xB3000000)
 val RedOpacity90 = Color(0x66F14848)

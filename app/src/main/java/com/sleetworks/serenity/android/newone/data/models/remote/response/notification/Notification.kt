@@ -6,11 +6,12 @@ data class Notification(
     val creatorUserName: String,
     val id: String,
     val markedAsRead: Boolean,
-    val notificationReason: String,
+    val notificationReason: String?,
     val pushNotificationType: String,
     val refObject: RefObject,
     val siteName: String,
     val targetUserId: String,
     val timestampEpochMillis: Long,
-    val workspaceId: String
+    val workspaceId: String,
+    val reminderDetails: ReminderDetails?
 )

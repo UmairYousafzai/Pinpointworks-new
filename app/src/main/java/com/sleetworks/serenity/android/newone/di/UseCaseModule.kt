@@ -3,7 +3,10 @@ package com.sleetworks.serenity.android.newone.di
 import com.sleetworks.serenity.android.newone.data.imageStore.UserImageStore
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.PointRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.local.ShareRepository
+import com.sleetworks.serenity.android.newone.domain.reporitories.local.UserRepository
 import com.sleetworks.serenity.android.newone.domain.reporitories.remote.ImageRemoteRepository
+import com.sleetworks.serenity.android.newone.domain.usecase.DownloadUserAvatarUseCase
+import com.sleetworks.serenity.android.newone.domain.usecase.DownloadUsersAvatarUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncImageUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointImageUseCase
 import com.sleetworks.serenity.android.newone.domain.usecase.SyncPointOriginalImageUseCase
@@ -34,7 +37,7 @@ object UseCaseModule {
         )
     }
 
-  @Provides
+    @Provides
     @ViewModelScoped
     fun provideSyncPointImageUseCase(
         imageRepository: ImageRemoteRepository,
@@ -46,7 +49,7 @@ object UseCaseModule {
         )
     }
 
-  @Provides
+    @Provides
     @ViewModelScoped
     fun provideSyncPointOriginalImageUseCase(
         imageRepository: ImageRemoteRepository,
@@ -58,6 +61,31 @@ object UseCaseModule {
         )
     }
 
+    @Provides
+    @ViewModelScoped
+    fun provideDownloadUsersAvatarUseCase(
+        imageRepository: ImageRemoteRepository,
+        userImageStore: UserImageStore,
+        userRepository: UserRepository
+    ): DownloadUsersAvatarUseCase {
+        return DownloadUsersAvatarUseCase(
+            imageRepository = imageRepository,
+            userImageStore = userImageStore,
+            userRepository = userRepository
+        )
+    }
+
+    @Provides
+    @ViewModelScoped
+    fun provideDownloadUserAvatarUseCase(
+        imageRepository: ImageRemoteRepository,
+        userImageStore: UserImageStore,
+    ): DownloadUserAvatarUseCase {
+        return DownloadUserAvatarUseCase(
+            imageRepository = imageRepository,
+            userImageStore = userImageStore,
+        )
+    }
 
 
 }

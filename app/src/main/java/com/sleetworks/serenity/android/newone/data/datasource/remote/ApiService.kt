@@ -8,6 +8,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.U
 import com.sleetworks.serenity.android.newone.data.models.remote.response.auth.UserResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
+import com.sleetworks.serenity.android.newone.data.models.remote.response.notification.Notification
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointResponse
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Video
@@ -155,6 +156,21 @@ interface ApiService {
         @Path("workspaceId") workspaceId: String,
         @Part imageFile: MultipartBody.Part
     ): Response<ApiResponse<Video>>
+
+
+    /* *********************************** Notification ******************/
+
+    @GET("v1/push-notifications/all")
+    suspend fun getPushNotifications(@Query("offset") offset: Int): Response<ApiResponse<List<Notification>>>
+
+    @PUT("v1/push-notifications/user-unread-status")
+    suspend fun markNotificationsOpened(): Response<ApiResponse<Unit>>
+
+        @PUT("v1/push-notifications/{notificationId}")
+    suspend fun markNotificationAsRead(
+        @Path("notificationId") notificationId: String,
+        @Query("markAsRead") markAsRead: Boolean
+    ): Response<ApiResponse<Unit>>
 
     //
 //    @POST("points")
@@ -358,8 +374,7 @@ interface ApiService {
 //    fun getUserById(@Path("id") id: String): Call<ApiResponse<User>>
 //
 //    /* *********************************** Shares ******************/
-//    @GET("share/target/{workspaceId}")
-//    fun listSharesForWorkspace(@Path("workspaceId") workspaceId: String): Call<ApiResponse<List<ShareWrapper>>>
+
 //
 //    @POST("share")
 //    fun createShare(@Body share: String): Call<ApiResponse<Share>>
@@ -383,11 +398,7 @@ interface ApiService {
 //    @PUT("push-notifications/user-unread-status")
 //    fun markNotificationsOpened(): Call<ApiResponse<Void>>
 //
-//    @PUT("push-notifications/{notificationId}")
-//    fun markNotificationAsRead(
-//        @Path("notificationId") notificationId: String,
-//        @Query("markAsRead") markAsRead: Boolean
-//    ): Call<ApiResponse<Void>>
+
 //
 //    @GET("video/itemref/{itemRefId}")
 //    fun getVideoList(@Path("itemRefId") id: String): Call<ApiResponse<List<Video>>>

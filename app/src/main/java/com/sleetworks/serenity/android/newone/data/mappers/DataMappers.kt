@@ -19,6 +19,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.request.AddComm
 import com.sleetworks.serenity.android.newone.data.models.remote.response.Assignee
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Comment
 import com.sleetworks.serenity.android.newone.data.models.remote.response.comment.Reaction
+import com.sleetworks.serenity.android.newone.data.models.remote.response.notification.Notification
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.Point
 import com.sleetworks.serenity.android.newone.data.models.remote.response.point.PointCustomField
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.Workspace
@@ -29,6 +30,7 @@ import com.sleetworks.serenity.android.newone.data.models.remote.response.worksp
 import com.sleetworks.serenity.android.newone.data.models.remote.response.workspace.site.Site
 import com.sleetworks.serenity.android.newone.domain.mapper.toDomain
 import com.sleetworks.serenity.android.newone.domain.models.CommentDomain
+import com.sleetworks.serenity.android.newone.domain.models.NotificationDomain
 import com.sleetworks.serenity.android.newone.domain.models.point.PointDomain
 import com.sleetworks.serenity.android.newone.presentation.model.LocalImage
 import java.util.UUID
@@ -404,7 +406,7 @@ fun PointEntity.toDomain(): PointDomain {
         assigneeIds = arrayListOf(),
         comments = arrayListOf(),
         localId = this.localID,
-        )
+    )
 }
 
 
