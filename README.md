@@ -12,6 +12,95 @@ Pinpoint Works is an Android application that transforms architectural plans and
 - **Global Collaboration**: Connect and collaborate with teams worldwide
 - **Real-time Communication**: Streamlined communication platform for project teams
 - **Project Management**: Centralized platform for tracking and managing project progress
+- **Offline-First Architecture**: Work seamlessly even without internet connection
+- **Intelligent Data Synchronization**: Efficient sync strategies for optimal performance
+
+## Synchronization Functionality
+
+Pinpoint Works implements a comprehensive synchronization system that ensures data consistency across devices and enables seamless offline functionality. The app uses a hybrid sync strategy combining multiple approaches for optimal performance.
+
+### Sync Strategy
+
+The application follows a **hybrid sync strategy** that includes:
+
+1. **Initial Full Sync**: Complete data download on first launch after login
+2. **Incremental Sync**: Delta updates based on timestamps for efficient data transfer
+3. **On-Demand Sync**: Manual refresh triggers for immediate updates
+4. **Offline-First**: Local storage with sync queue for offline operations
+5. **Background Sync**: Non-blocking image and avatar downloads
+
+### Sync Types
+
+#### 1. Initial Sync (First Launch)
+On first launch after login, the app performs a complete initial sync:
+- Downloads all workspaces, sites, shares, and workspace users
+- Stores custom fields and user permissions
+- Uses parallel API execution for faster sync times
+- Establishes baseline data for incremental updates
+
+#### 2. Workspace Data Sync
+Refreshes workspace-related information:
+- User data and authentication status
+- Workspaces, sites, and shares
+- Workspace users and permissions
+- Custom field definitions
+- Executes multiple API calls in parallel for efficiency
+
+#### 3. Point Sync (Incremental)
+The most efficient sync type using timestamp-based incremental updates:
+- Only fetches changes since last sync timestamp
+- Downloads new, updated, and removed points
+- Minimizes data transfer for large point lists
+- Automatically triggers background image synchronization
+- Updates user avatars in the background
+
+#### 4. Point Detail Sync
+Comprehensive sync for individual point details:
+- Complete point information and metadata
+- Comments and comment reactions
+- Related site and workspace data
+- Supports offline-first: syncs offline changes first when connection is restored
+- Parallel API execution for all related data
+
+#### 5. Image Synchronization
+Intelligent background image downloading:
+- Permission-based filtering (only downloads images user has access to)
+- Batch processing to prevent network overload
+- Downloads thumbnails (200x200) and originals (bounded 1200px)
+- Only downloads missing images to save bandwidth
+- Non-blocking background execution
+
+### Offline Functionality
+
+Pinpoint Works supports comprehensive offline operations:
+
+- **Offline Data Storage**: All data is stored locally using Room database
+- **Offline Modifications**: Users can create, update, and delete points, comments, and reactions while offline
+- **Sync Queue**: Offline changes are queued and automatically synced when connection is restored
+- **Conflict Handling**: Offline changes are prioritized and synced before fetching latest server data
+- **Supported Offline Operations**:
+  - Point field updates
+  - Comments and reactions
+  - Image and video uploads
+  - Custom field modifications
+
+### Sync Performance
+
+The app optimizes sync performance through:
+
+- **Parallel Execution**: Multiple independent API calls execute concurrently
+- **Incremental Updates**: Only changed data is transferred, reducing bandwidth usage
+- **Batch Processing**: Images and avatars are downloaded in optimized batches
+- **Background Processing**: Non-critical syncs (images, avatars) run in background without blocking UI
+- **Efficient Data Transfer**: Timestamp-based incremental sync minimizes data transfer for large datasets
+
+### Technical Implementation
+
+- **Async Operations**: Kotlin Coroutines with Flow for asynchronous sync operations
+- **Local Database**: Room database for offline storage and data persistence
+- **Network Layer**: Retrofit with OkHttp for API communication
+- **State Management**: Resource wrapper pattern for loading, success, and error states
+- **Background Tasks**: WorkManager for scheduled and background sync operations
 
 ## Technology Stack
 
